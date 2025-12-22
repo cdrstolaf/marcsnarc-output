@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CRH-test - MARC Records</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; line-height: 1.6; background: #fafafa; }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 2em; font-weight: 300; }
+        .header p { margin: 10px 0 0; opacity: 0.9; }
+        
+        /* Image Gallery */
+        .image-gallery { display: flex; gap: 15px; overflow-x: auto; padding: 20px 0; margin-bottom: 30px; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .thumbnail-container { flex-shrink: 0; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .thumbnail-container:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .thumbnail { width: 200px; height: 300px; object-fit: cover; border-radius: 8px; border: 3px solid #e0e0e0; transition: border-color 0.2s ease; }
+        .thumbnail-container:hover .thumbnail { border-color: #667eea; }
+        .thumbnail-label { text-align: center; margin-top: 8px; font-size: 0.85em; color: #666; font-weight: 500; word-break: break-word; max-width: 200px; }
+        .no-images { text-align: center; padding: 40px; color: #999; font-style: italic; background: white; border-radius: 10px; margin-bottom: 30px; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90vw; max-height: 90vh; }
+        .modal-image { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 15px; right: 20px; color: white; font-size: 30px; font-weight: bold; cursor: pointer; z-index: 1001; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: background 0.2s ease; }
+        .modal-close:hover { background: rgba(255,0,0,0.7); }
+        .modal-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 15px 20px; font-size: 18px; cursor: pointer; border-radius: 5px; transition: background 0.2s ease; }
+        .modal-nav:hover { background: rgba(0,0,0,0.8); }
+        .modal-prev { left: 20px; }
+        .modal-next { right: 20px; }
+        .modal-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 14px; }
+        
+        /* MARC Records */
+        .records-section h2 { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin: 30px 0 20px; }
+        .marc-record { background: white; border: none; margin-bottom: 25px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .marc-record h3 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .confidence { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); padding: 6px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px; color: #2c5530; font-weight: 500; font-size: 0.9em; }
+        .review-flag { background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); border: none; color: #d63031; padding: 6px 12px; border-radius: 20px; margin-bottom: 15px; font-weight: 500; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        th, td { padding: 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; width: 100px; }
+        .subfield-code { font-weight: bold; color: #667eea; background: #f8f9ff; padding: 2px 4px; border-radius: 3px; margin-right: 5px; }
+        .no-records { text-align: center; padding: 40px; color: #999; font-style: italic; background: white; border-radius: 10px; margin-bottom: 30px; }
+        
+        /* JSON Tree View */
+        .json-tree-section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .json-tree-section h2 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .tree-container { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #fafafa; max-height: 600px; overflow-y: auto; font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace; }
+        .expand-all-btn, .collapse-all-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-right: 10px; margin-bottom: 15px; font-size: 0.9em; transition: transform 0.2s ease; }
+        .expand-all-btn:hover, .collapse-all-btn:hover { transform: translateY(-1px); }
+        
+        /* Footer */
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9em; background: white; border-radius: 10px; margin-top: 30px; }
+        .footer a { color: #667eea; text-decoration: none; font-weight: 500; }
+        .footer a:hover { text-decoration: underline; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .thumbnail { width: 150px; height: 225px; }
+            .thumbnail-label { max-width: 150px; }
+            .modal-nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CRH-test</h1>
+        <p>📚 MARC Records generated by marcsnarc on 2025-12-22 16:16:20</p>
+    </div>
+    
+    <div class='image-gallery'>
+
+                <div class='thumbnail-container' onclick='openModal(0)'>
+                    <img src='img_PXL_20251212_164209737.webp' alt='PXL_20251212_164209737.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164209737.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(1)'>
+                    <img src='img_PXL_20251212_164253582.webp' alt='PXL_20251212_164253582.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164253582.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(2)'>
+                    <img src='img_PXL_20251212_164339517.webp' alt='PXL_20251212_164339517.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164339517.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(3)'>
+                    <img src='img_PXL_20251212_164450342.webp' alt='PXL_20251212_164450342.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164450342.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(4)'>
+                    <img src='img_PXL_20251212_164650783.webp' alt='PXL_20251212_164650783.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164650783.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(5)'>
+                    <img src='img_PXL_20251212_164821071.webp' alt='PXL_20251212_164821071.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164821071.jpg</div>
+                </div>
+                </div>
+
+    
+    <!-- Modal for image viewing -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <button class="modal-nav modal-prev" onclick="changeImage(-1)">‹</button>
+        <button class="modal-nav modal-next" onclick="changeImage(1)">›</button>
+        <div class="modal-content">
+            <img id="modalImage" class="modal-image" src="" alt="">
+        </div>
+        <div class="modal-counter" id="modalCounter"></div>
+    </div>
+    
+    <div class="records-section">
+        <h2>📋 MARC Records</h2>
+        <div class='marc-record'>
+<h3>Record 1</h3>
+<div class='confidence'>Confidence: 0.47</div>
+<div class='review-flag'>⚠️ Review Required</div>
+<table><tr><th>LDR</th><td>00000nam a200000 Ki 500</td></tr><tr><th>001</th><td>msn20251222221618</td></tr><tr><th>003</th><td>DLC</td></tr><tr><th>005</th><td>20251222221618.0</td></tr><tr><th>008</th><td>251222m19581966            o     00chi und d</td></tr><tr><th>040</th><td><strong>__</strong> <span class="subfield-code">‡a</span>DLC <span class="subfield-code">‡b</span>eng <span class="subfield-code">‡c</span>DLC <span class="subfield-code">‡e</span>rda </td></tr><tr><th>245</th><td><strong>00</strong> <span class="subfield-code">‡a</span>CRH-test </td></tr><tr><th>264</th><td><strong>_1</strong> <span class="subfield-code">‡c</span>1958 </td></tr><tr><th>300</th><td><strong>__</strong> <span class="subfield-code">‡a</span>6 items (various formats) </td></tr><tr><th>520</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Collection consists of 1 books, 5 other items. Items date from 1958 to 1966. </td></tr><tr><th>500</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Collection-level record for 6 items </td></tr><tr><th>500</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Provenance: Extracted from 6 images using marcsnarc </td></tr><tr><th>561</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Extracted from 6 images using marcsnarc </td></tr><tr><th>650</th><td><strong>_0</strong> <span class="subfield-code">‡a</span>Cultural Revolution </td></tr><tr><th>650</th><td><strong>_0</strong> <span class="subfield-code">‡a</span>Mao Zedong thought </td></tr><tr><th>999</th><td><strong>__</strong> <span class="subfield-code">‡i</span>Generated by marcsnarc on 2025-12-22 <span class="subfield-code">‡s</span>marcsnarc </td></tr></table></div>
+
+    </div>
+    
+    
+            <div class='json-tree-section'>
+                <h2>📊 Analysis Data</h2>
+                <div class='tree-container' id='analysis-tree'></div>
+                <button class='expand-all-btn' onclick='expandAllNodes("analysis-tree")'>
+                    🔍 Expand All
+                </button>
+                <button class='collapse-all-btn' onclick='collapseAllNodes("analysis-tree")'>
+                    📁 Collapse All
+                </button>
+            </div>
+            
+            <div class='json-tree-section'>
+                <h2>📋 Processing Metadata</h2>
+                <div class='tree-container' id='metadata-tree'></div>
+                <button class='expand-all-btn' onclick='expandAllNodes("metadata-tree")'>
+                    🔍 Expand All
+                </button>
+                <button class='collapse-all-btn' onclick='collapseAllNodes("metadata-tree")'>
+                    📁 Collapse All
+                </button>
+            </div>
+            
+    
+    <div class="footer">
+        Generated with <a href="https://github.com/anthropics/marcsnarc">marcsnarc</a> - AI-powered MARC cataloging
+    </div>
+    
+    <script>
+        // Global variables for modal and JSON data
+        let currentImages = [];
+        let currentImageIndex = 0;
+        const analysisData = {"collection_analysis": {"item_count": 6, "formats": {"format_counts": {"archival collection": 1, "manuscript": 2, "printed document/article": 1, "pamphlet": 1, "manuscript or archival document": 1}, "unique_formats": "{'printed document/article', 'pamphlet', 'manuscript', 'manuscript or archival document', 'archival collection'}", "books": 1, "serials": 0, "ephemera": 0, "other": 5, "primary_format": "manuscript"}, "creators": {"creator_counts": {"Unknown author from No. 27 revolutionary railroad middle school": 1, "韩启德 (Han Qide) and others": 1, "人民日报": 1}, "unique_creators": "{'人民日报', '韩启德 (Han Qide) and others', 'Unknown author from No. 27 revolutionary railroad middle school'}", "items_with_creators": 3, "items_without_creators": 3, "dominant_creator": ["Unknown author from No. 27 revolutionary railroad middle school", 1]}, "dates": {"date_range": [1958, 1966], "earliest_date": 1958, "latest_date": 1966, "date_span": 8, "items_with_dates": 2, "date_counts": {"1966": 1, "1958": 1}}, "languages": {"language_counts": {"english (description), chinese (materials)": 1, "chi": 5}, "unique_languages": "{'chi', 'english (description), chinese (materials)'}", "primary_language": "chi", "multilingual": true}, "subjects": {"subject_counts": {"Chinese Cultural Revolution": 1, "Handbills": 1, "Red guard groups": 1, "Revolutionary committees": 1, "Political ephemera": 1, "Cultural Revolution": 3, "Railroad middle school": 1, "Revolutionary rhetoric": 1, "Political education": 1, "Mao Zedong thought": 2, "Anti-virus": 1, "Material suppression method": 1, "Medical/Health sciences": 1, "Anti-revisionist movement": 1, "Banned books and songs": 1, "Red Guards": 1, "Political censorship": 1, "Ouyang Hai (欧阳海)": 1, "Chairman Mao study materials": 1, "Feudalist and capitalist 'black books'": 1, "Beijing Party Committee": 1, "Huangnianjing Commune (黄埝井公社)": 1, "Liberation Army": 1, "Youth education": 1, "Political propaganda": 1, "Tibetan Buddhism": 1, "Chinese Buddhist materials": 1, "Oriental manuscripts": 1, "Archival materials": 1}, "unique_subjects": "{'Political propaganda', 'Material suppression method', 'Political ephemera', 'Anti-virus', 'Political censorship', 'Beijing Party Committee', 'Ouyang Hai (欧阳海)', 'Chinese Cultural Revolution', 'Chairman Mao study materials', 'Handbills', 'Oriental manuscripts', 'Cultural Revolution', 'Chinese Buddhist materials', 'Anti-revisionist movement', 'Archival materials', 'Mao Zedong thought', 'Tibetan Buddhism', 'Liberation Army', 'Red Guards', 'Railroad middle school', 'Revolutionary committees', 'Medical/Health sciences', 'Youth education', \"Feudalist and capitalist 'black books'\", 'Political education', 'Revolutionary rhetoric', 'Red guard groups', 'Banned books and songs', 'Huangnianjing Commune (黄埝井公社)'}", "items_with_subjects": 6, "common_subjects": [["Cultural Revolution", 3], ["Mao Zedong thought", 2], ["Chinese Cultural Revolution", 1], ["Handbills", 1], ["Red guard groups", 1]], "subject_coherence": 2.701149425287356}, "provenance": {"collection_provenance": "Extracted from 6 images using marcsnarc", "item_provenances": {}, "consistency_score": 1.0, "has_provenance": true}, "identifiers": {"items_with_isbn": 0, "items_with_issn": 0, "items_with_oclc": 0, "items_with_lccn": 0, "identifier_coverage": 0.0}, "physical_characteristics": {"extent_variety": 6, "dimension_variety": 4, "physical_coherence": 0.16666666666666663}, "format_diversity": 5, "creator_diversity": 3, "has_books_serials": true, "shared_provenance": true, "temporal_coherence": 0.8, "workflow_type": "collection_images_to_marc", "collection_name": "CRH-test", "processing_timestamp": "2025-12-22T16:16:19.184281", "total_records": 1, "approach": "collection"}, "batch_analysis": {"collection_name": "CRH-test", "total_images": 6, "successful_analyses": 6, "failed_analyses": 0, "individual_results": [{"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164209737.jpg", "extracted_data": {"title": "Archived Box 5 Chinese Cultural Revolution handbills, plus printed miscellany", "publication_date": "1960s-1970s", "normalized_date": {"normalized": null, "end_date": null, "circa": false, "uncertain": true, "original": "1960s-1970s"}, "format": "archival collection", "extent": "Box 5 of archival collection", "language": "english (description), chinese (materials)", "original_script_title": "Latin script (description), Chinese characters (materials)", "other_identifiers": "RVB collection, Arranged chronologically, Handbills, leaflets, newspaper extras", "subjects": [{"heading": "Chinese Cultural Revolution", "type": "topical", "source": "claude_analysis"}, {"heading": "Handbills", "type": "topical", "source": "claude_analysis"}, {"heading": "Red guard groups", "type": "topical", "source": "claude_analysis"}, {"heading": "Revolutionary committees", "type": "topical", "source": "claude_analysis"}, {"heading": "Political ephemera", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Collection description indicates materials were acquired in Hohhot in late 90s", "source": "image_analysis"}, {"text": "Box contains newspaper extras, handbills, and leaflets from various red guard groups", "source": "image_analysis"}, {"text": "Items represent only ephemeral materials from RVB collection", "source": "image_analysis"}, {"text": "Materials related to local place names, red guard groups, and neighborhood committees", "source": "image_analysis"}, {"text": "Reference to 'People's Daily or Liberation Daily' and 'RMRB, 2021.12.30'", "source": "image_analysis"}, {"text": "Yellow sticky note visible with handwritten text: 'Cultural Revolution handbills, handbills 1966-1976' and '#20'", "source": "image_analysis"}, {"text": "Materials appear to be archival research collection of Chinese Cultural Revolution era documents", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.2, "publication": 0.15166666666666667, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.38558333333333333}, "overall_confidence": 0.38558333333333333, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "Archived Box 5 Chinese Cultural Revolution handbills, plus printed miscellany. RVB collection. Arranged chronologically. Handbills, leaflets, newspaper extras", "language": "English", "location": "archival description page"}, {"text": "Cultural Revolution handbills, handbills 1966-1976, #20", "language": "English", "location": "sticky note"}, {"text": "The poetry items listed below were all acquired in Hohhot in the late 90s. They are a mixture of newspaper extras - whole & torn fragments from newspapers. [Additional text about red guard groups and revolutionary committees follows]", "language": "English", "location": "archival description page"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided", "No creator/author information found"], "review_required": true, "sequence_number": 1}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164650783.jpg", "extracted_data": {"title": "Three-page leaflet from the No. 27 revolutionary railroad middle school", "creator": {"name": "Unknown author from No. 27 revolutionary railroad middle school", "type": "corporate", "source": "claude_analysis"}, "publisher": "No. 27 revolutionary railroad middle school", "publication_date": "1966-67 (Cultural Revolution period)", "normalized_date": {"normalized": "1966", "end_date": null, "circa": true, "uncertain": false, "original": "1966-67 (Cultural Revolution period)"}, "format": "manuscript", "extent": "Three-page handwritten document", "dimensions": "Standard letter/A4 size (approximate)", "language": "chi", "original_script_title": "Simplified Chinese characters", "other_identifiers": "Archival notation: '1966 7-?', 'Cultural Revolution Handbills', '#4' visible on yellow note", "subjects": [{"heading": "Cultural Revolution", "type": "topical", "source": "claude_analysis"}, {"heading": "Railroad middle school", "type": "topical", "source": "claude_analysis"}, {"heading": "Revolutionary rhetoric", "type": "topical", "source": "claude_analysis"}, {"heading": "Political education", "type": "topical", "source": "claude_analysis"}, {"heading": "Mao Zedong thought", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Document appears to be from the early Cultural Revolution period (1966-67)", "source": "image_analysis"}, {"text": "Yellow sticky note indicates catalog number '1966 7-?', 'Cultural Revolution Handbills', 'Three-page leaflet from No. 27', 'Railroad Middle School', '2/10/16', '#4'", "source": "image_analysis"}, {"text": "Accompanying typed page in English provides context and translation/description", "source": "image_analysis"}, {"text": "Handwritten in blue ink on yellowed paper", "source": "image_analysis"}, {"text": "Document stored in protective plastic sleeve", "source": "image_analysis"}, {"text": "English description mentions conflict between railroad elementary and middle schools", "source": "image_analysis"}, {"text": "References to Mao Zedong and revolutionary rhetoric visible in context description", "source": "image_analysis"}, {"text": "Paper clip attached to document", "source": "image_analysis"}, {"text": "Shows signs of aging and historical preservation", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.5249999999999999, "publication": 0.30333333333333334, "format": 0.5850000000000001, "language": 0.5850000000000001, "overall": 0.5166666666666666}, "overall_confidence": 0.5166666666666666, "claude_factors": {"text_clarity": "medium", "completeness": "high", "language_certainty": "high"}, "original_text_regions": [{"text": "Handwritten Chinese text in simplified characters - full transcription would require closer examination of individual characters", "language": "Chinese (Simplified)", "location": "main document body"}, {"text": "1966 7-? / Cultural Revolution Handbills / Three-page leaflet from / No. 27 / Railroad / middle school / 2/10/16 / #4", "language": "English", "location": "yellow sticky note"}, {"text": "1966-67. Three-page leaflet from and panels of the No. 27 revolutionary railroad middle school in conflict with the railroad elementary school. Headline: 铁路学中学 [Title]: 'Specially urgent report' Published by: 二七铁路中学文革风云红卫兵 Er er tiesing zhongxue wenke fengxun hone weifeng...", "language": "English with Chinese", "location": "typed description page"}], "processing_notes": ["Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 2}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164821071.jpg", "extracted_data": {"title": "彻底反病毒 (物质抑制法)", "creator": {"name": "韩启德 (Han Qide) and others", "type": "personal", "source": "claude_analysis", "romanization": "Han Qide"}, "publication_date": "August 27", "normalized_date": {"normalized": null, "end_date": null, "circa": false, "uncertain": true, "original": "August 27"}, "format": "printed document/article", "extent": "Single page document", "dimensions": "Standard A4 or similar size", "language": "chi", "original_script_title": "Simplified Chinese characters", "subjects": [{"heading": "Anti-virus", "type": "topical", "source": "claude_analysis"}, {"heading": "Material suppression method", "type": "topical", "source": "claude_analysis"}, {"heading": "Medical/Health sciences", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Document appears to be a photocopy or printed page", "source": "image_analysis"}, {"text": "Contains dense text in multiple columns", "source": "image_analysis"}, {"text": "Yellow post-it note attached with handwritten text: '98年10月24日收自一篇 编辑用信封内 附有中研院分子医学研究所 吴正中'", "source": "image_analysis"}, {"text": "Handwritten note indicates date October 24, 1998", "source": "image_analysis"}, {"text": "References to researchers including Han Qide", "source": "image_analysis"}, {"text": "Text appears to be academic or medical research related", "source": "image_analysis"}, {"text": "Multiple author names visible in the text", "source": "image_analysis"}, {"text": "Contains references to various medical/scientific terms and institutions", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.5249999999999999, "publication": 0.15166666666666667, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.4668333333333333}, "overall_confidence": 0.4668333333333333, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "彻底反病毒 (物质抑制法)", "language": "Chinese", "location": "title/header"}, {"text": "98年10月24日收自一篇 编辑用信封内 附有中研院分子医学研究所 吴正中", "language": "Chinese", "location": "post-it note"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 3}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164339517.jpg", "extracted_data": {"title": "Urgent appeal to ban some books and songs from red guards in the 'Anti-revisionist Commune'", "creator": {"name": "Unknown", "type": "personal", "source": "claude_analysis"}, "publisher": "东风公社 (Dongfeng Commune)", "publication_place": "Beijing (东风公社, Dongfeng Commune)", "publication_date": "1958 (related to 'Anti-Huangnianjing Commune' events, circa Cultural Revolution period)", "normalized_date": {"normalized": "1958", "end_date": null, "circa": true, "uncertain": false, "original": "1958 (related to 'Anti-Huangnianjing Commune' events, circa Cultural Revolution period)"}, "format": "manuscript", "extent": "Multiple pages - appears to be a handwritten document", "dimensions": "Standard paper size, approximately A4 or similar", "language": "chi", "original_script_title": "Simplified Chinese characters", "other_identifiers": "62.27 (visible on yellow note); archival reference number 42", "subjects": [{"heading": "Cultural Revolution", "type": "topical", "source": "claude_analysis"}, {"heading": "Anti-revisionist movement", "type": "topical", "source": "claude_analysis"}, {"heading": "Banned books and songs", "type": "topical", "source": "claude_analysis"}, {"heading": "Red Guards", "type": "topical", "source": "claude_analysis"}, {"heading": "Political censorship", "type": "topical", "source": "claude_analysis"}, {"heading": "Ouyang Hai (欧阳海)", "type": "topical", "source": "claude_analysis"}, {"heading": "Chairman Mao study materials", "type": "topical", "source": "claude_analysis"}, {"heading": "Feudalist and capitalist 'black books'", "type": "topical", "source": "claude_analysis"}, {"heading": "Beijing Party Committee", "type": "topical", "source": "claude_analysis"}, {"heading": "Huangnianjing Commune (黄埝井公社)", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Document appears to be preserved in plastic archival sleeve", "source": "image_analysis"}, {"text": "Yellow sticky note contains handwritten cataloging information in English", "source": "image_analysis"}, {"text": "White printed label describes the document as an urgent appeal from 1967 regarding banning books and songs", "source": "image_analysis"}, {"text": "Content relates to Cultural Revolution-era censorship activities", "source": "image_analysis"}, {"text": "Mentions influence of former Beijing Party Committee and Eastern Suburb area (Fangtu gongshe/Guanr Huangnianjing)", "source": "image_analysis"}, {"text": "References burning of 'unhealthy' books and songs, particularly those related to feudalist, capitalist and revisionist ideologies", "source": "image_analysis"}, {"text": "Document discusses confiscation from Chairman Mao and related study center", "source": "image_analysis"}, {"text": "References 'Anti-Huangnianjing Commune' in Beijing suburbs as of 1958", "source": "image_analysis"}, {"text": "Mentions Green Leafy Mountains (绿叶青山) and Mimosa in handwriting with right slant", "source": "image_analysis"}, {"text": "Describes placement in plastic sleeve and marking with removed staple", "source": "image_analysis"}, {"text": "Handwritten Chinese text appears to be original document from the period", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.5249999999999999, "publication": 0.45499999999999996, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.5275}, "overall_confidence": 0.5275, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "62.27 Urgent appeal to ban some books and songs, from red guards in the 'Anti-revisionist Commune'", "language": "English", "location": "cataloging label"}, {"text": "东风公社", "language": "Chinese", "location": "descriptive label - publisher information"}, {"text": "黄埝井公社 (Guanr Huangnianjing)", "language": "Chinese", "location": "descriptive label"}, {"text": "欧阳海 (Ouyang Hai)", "language": "Chinese", "location": "descriptive label"}, {"text": "绿叶青山 (Green Leafy Mountains)", "language": "Chinese", "location": "descriptive label"}, {"text": "[Handwritten Chinese manuscript text visible on aged paper]", "language": "Chinese", "location": "main document body"}, {"text": "12.8.07 Cultural Revolution materials Urgent appeal to ban some books + songs from Red Guards in 'Anti-revisionist Commune'. 42", "language": "English", "location": "yellow sticky note"}], "processing_notes": ["Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 4}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164450342.jpg", "extracted_data": {"title": "革命青少年要向解放军学习", "subtitle": "人民日报八月二十八日社论", "creator": {"name": "人民日报", "type": "corporate", "source": "claude_analysis", "romanization": "Renmin Ribao (People's Daily)"}, "publisher": "人民日报", "publication_date": "1966年8月28日", "normalized_date": {"normalized": null, "end_date": null, "circa": false, "uncertain": true, "original": "1966年8月28日"}, "format": "pamphlet", "extent": "Single sheet", "language": "chi", "original_script_title": "Simplified Chinese", "other_identifiers": "RI.1966/8.28 People's Daily editorial from August 28", "subjects": [{"heading": "Cultural Revolution", "type": "topical", "source": "claude_analysis"}, {"heading": "Liberation Army", "type": "topical", "source": "claude_analysis"}, {"heading": "Youth education", "type": "topical", "source": "claude_analysis"}, {"heading": "Mao Zedong thought", "type": "topical", "source": "claude_analysis"}, {"heading": "Political propaganda", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "This is a People's Daily editorial from August 28, 1966, during the Cultural Revolution period", "source": "image_analysis"}, {"text": "Contains quotation box at top with Maoist slogans about reading Mao's books and listening to Chairman Mao", "source": "image_analysis"}, {"text": "The document is preserved in plastic covering on a wooden board", "source": "image_analysis"}, {"text": "Yellow post-it note contains archival information: '1966.8.28 Cultural Revolution Used widely Peoples [sic] Daily editorial from August 28' with number (93)", "source": "image_analysis"}, {"text": "White label indicates cataloging information referencing year 1966 and Quotations from Chairman Mao", "source": "image_analysis"}, {"text": "Mentions various PLA heroes including Lei Feng, Ouyang Hai, Wang Jie, Mai Xiande", "source": "image_analysis"}, {"text": "Text urges revolutionary youth to learn from the Liberation Army", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.765, "creator": 0.675, "publication": 0.39, "format": 0.5850000000000001, "language": 0.5850000000000001, "overall": 0.6225}, "overall_confidence": 0.6225, "claude_factors": {"text_clarity": "high", "completeness": "high", "language_certainty": "high"}, "original_text_regions": [{"text": "读毛主席的书, 听毛主席的话, 照毛主席的指示办事, 做毛主席的好战士", "language": "Chinese (Simplified)", "location": "header box"}, {"text": "革命青少年要向解放军学习", "language": "Chinese (Simplified)", "location": "title"}, {"text": "(人民日报八月二十八日社论)", "language": "Chinese (Simplified)", "location": "subtitle"}], "processing_notes": ["Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 5}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164253582.jpg", "extracted_data": {"title": "Possibly a manuscript or document related to Tibetan or Chinese Buddhist materials", "format": "manuscript or archival document", "extent": "Multiple sheets: one larger document with Chinese text, one white printed description sheet, one yellow note card", "dimensions": "Approximately A4 or letter size for main document", "language": "chi", "original_script_title": "Chinese characters (traditional)", "other_identifiers": "Call number visible on yellow note: NRB 8 23", "subjects": [{"heading": "Tibetan Buddhism", "type": "topical", "source": "claude_analysis"}, {"heading": "Chinese Buddhist materials", "type": "topical", "source": "claude_analysis"}, {"heading": "Oriental manuscripts", "type": "topical", "source": "claude_analysis"}, {"heading": "Archival materials", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Image shows archival materials laid out on a wooden surface", "source": "image_analysis"}, {"text": "Yellow sticky note indicates this is item 'NRB 8 23' from what appears to be a research collection", "source": "image_analysis"}, {"text": "Main document appears to be aged paper with vertical columns of Chinese text", "source": "image_analysis"}, {"text": "White sheet contains English text describing the provenance and nature of Oriental Buddhist manuscripts", "source": "image_analysis"}, {"text": "Document appears to be part of an institutional collection (possibly from Freiburg as mentioned on white sheet)", "source": "image_analysis"}, {"text": "Materials are in protective plastic sleeve", "source": "image_analysis"}, {"text": "Paper clip attached to main document", "source": "image_analysis"}, {"text": "Text on white sheet references 'Buddhadatta das Leben und die Lehren des gotama Buddha'", "source": "image_analysis"}, {"text": "References to Pali Buddhist texts and Vessantara story visible on English description", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.2, "publication": 0.0, "format": 0.26, "language": 0.5850000000000001, "overall": 0.326}, "overall_confidence": 0.326, "claude_factors": {"text_clarity": "medium", "completeness": "low", "language_certainty": "high"}, "original_text_regions": [{"text": "NRB 8 23, Tibetan Research, Microfilm H scopy, Freiburg research", "language": "English", "location": "yellow note card"}, {"text": "Various vertical columns of Chinese characters including references to Buddhist terminology", "language": "Chinese", "location": "main document"}, {"text": "A Provenance Volume: the name of volume 1 Oriental Library | Peigen da jiudu | Life and...[continues with description of Buddhist manuscripts and references to Buddhadatta, Vessantara story]", "language": "English with romanized Chinese", "location": "white description sheet"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Bibliographic information appears incomplete in image", "Contains CJK characters - romanization provided", "No creator/author information found"], "review_required": true, "sequence_number": 6}], "collection_analysis": {"total_items": 6, "successful_extractions": 6, "common_characteristics": {"primary_language": "chi", "language_distribution": {"english (description), chinese (materials)": 1, "chi": 5}, "primary_format": "manuscript", "format_distribution": {"archival collection": 1, "manuscript": 2, "printed document/article": 1, "pamphlet": 1, "manuscript or archival document": 1}, "publishers": {"No. 27 revolutionary railroad middle school": 1, "东风公社 (Dongfeng Commune)": 1, "人民日报": 1}}, "quality_assessment": {"average_confidence": 0.47418055555555555, "high_confidence_items": 0, "low_confidence_items": 3, "confidence_range": [0.326, 0.6225]}, "recommendations": ["More than 30% of items have low confidence - consider manual review", "Multiple languages detected - verify language coding", "6 items contain CJK characters - verify romanization"]}, "batch_confidence": 0.47418055555555555, "processing_timestamp": "2025-12-22T16:16:18.998014"}, "individual_extractions": [{"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164209737.jpg", "extraction_confidence": 0.38558333333333333, "extracted_fields": ["title", "publication_date", "normalized_date", "format", "extent", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164650783.jpg", "extraction_confidence": 0.5166666666666666, "extracted_fields": ["title", "creator", "publisher", "publication_date", "normalized_date", "format", "extent", "dimensions", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164821071.jpg", "extraction_confidence": 0.4668333333333333, "extracted_fields": ["title", "creator", "publication_date", "normalized_date", "format", "extent", "dimensions", "language", "original_script_title", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164339517.jpg", "extraction_confidence": 0.5275, "extracted_fields": ["title", "creator", "publisher", "publication_place", "publication_date", "normalized_date", "format", "extent", "dimensions", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164450342.jpg", "extraction_confidence": 0.6225, "extracted_fields": ["title", "subtitle", "creator", "publisher", "publication_date", "normalized_date", "format", "extent", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Cultural Revolution Handbills/PXL_20251212_164253582.jpg", "extraction_confidence": 0.326, "extracted_fields": ["title", "format", "extent", "dimensions", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}]};
+        const metadataData = {"workflow_type": "collection_images_to_marc", "collection_name": "CRH-test", "processing_result": {"approach": "collection", "records_generated": 1, "review_required": true, "groupings": {"approach": "collection", "total_items": 6, "groups": [{"type": "collection", "items": ["Archived Box 5 Chinese Cultural Revolution handbills, plus printed miscellany", "Three-page leaflet from the No. 27 revolutionary railroad middle school", "彻底反病毒 (物质抑制法)", "Urgent appeal to ban some books and songs from red guards in the 'Anti-revisionist Commune'", "革命青少年要向解放军学习", "Possibly a manuscript or document related to Tibetan or Chinese Buddhist materials"], "record_type": "collection"}]}}, "collection_data": {"total_items": 6, "source_images": ["examples/Cultural Revolution Handbills/PXL_20251212_164209737.jpg", "examples/Cultural Revolution Handbills/PXL_20251212_164650783.jpg", "examples/Cultural Revolution Handbills/PXL_20251212_164821071.jpg", "examples/Cultural Revolution Handbills/PXL_20251212_164339517.jpg", "examples/Cultural Revolution Handbills/PXL_20251212_164450342.jpg", "examples/Cultural Revolution Handbills/PXL_20251212_164253582.jpg"], "provenance": "Extracted from 6 images using marcsnarc"}, "batch_analysis_summary": {"total_images": 6, "successful_analyses": 6, "batch_confidence": 0.47418055555555555}, "processing_timestamp": "2025-12-22T16:16:19.184300"};
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize images array from gallery
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            currentImages = Array.from(thumbnails).map(img => ({
+                src: img.src,
+                alt: img.alt
+            }));
+            
+            // Initialize JSON trees
+            if (analysisData && Object.keys(analysisData).length > 0) {
+                renderJsonTree('analysis-tree', analysisData);
+            }
+            if (metadataData && Object.keys(metadataData).length > 0) {
+                renderJsonTree('metadata-tree', metadataData);
+            }
+        });
+        
+        // Modal functions
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const counter = document.getElementById('modalCounter');
+            
+            if (currentImages[index]) {
+                modalImage.src = currentImages[index].src;
+                modalImage.alt = currentImages[index].alt;
+                counter.textContent = `${index + 1} of ${currentImages.length}`;
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function changeImage(direction) {
+            currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
+            openModal(currentImageIndex);
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                if (e.key === 'Escape') closeModal();
+                if (e.key === 'ArrowLeft') changeImage(-1);
+                if (e.key === 'ArrowRight') changeImage(1);
+            }
+        });
+        
+        // Close modal on background click
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        // JSON Tree rendering functions
+        function renderJsonTree(containerId, data) {
+            const container = document.getElementById(containerId);
+            if (!container || !data) return;
+            
+            container.innerHTML = '';
+            const tree = createTreeElement(data, '', 0);
+            container.appendChild(tree);
+        }
+        
+        function createTreeElement(value, key, level) {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginLeft = `${level * 20}px`;
+            wrapper.style.marginBottom = '3px';
+            
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                // Object
+                const keyElement = document.createElement('div');
+                keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📁 ${key} {${Object.keys(value).length}}</span>`;
+                keyElement.style.userSelect = 'none';
+                
+                const children = document.createElement('div');
+                children.style.display = 'none';
+                children.style.borderLeft = '2px solid #e2e8f0';
+                children.style.marginLeft = '15px';
+                children.style.paddingLeft = '10px';
+                
+                Object.entries(value).forEach(([childKey, childValue]) => {
+                    children.appendChild(createTreeElement(childValue, childKey, 0));
+                });
+                
+                keyElement.addEventListener('click', function() {
+                    const isExpanded = children.style.display !== 'none';
+                    if (isExpanded) {
+                        children.style.display = 'none';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📁 ${key} {${Object.keys(value).length}}</span>`;
+                    } else {
+                        children.style.display = 'block';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▼ 📂 ${key} {${Object.keys(value).length}}</span>`;
+                    }
+                });
+                
+                wrapper.appendChild(keyElement);
+                wrapper.appendChild(children);
+            } else if (Array.isArray(value)) {
+                // Array
+                const keyElement = document.createElement('div');
+                keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📚 ${key} [${value.length}]</span>`;
+                keyElement.style.userSelect = 'none';
+                
+                const children = document.createElement('div');
+                children.style.display = 'none';
+                children.style.borderLeft = '2px solid #e2e8f0';
+                children.style.marginLeft = '15px';
+                children.style.paddingLeft = '10px';
+                
+                value.forEach((item, index) => {
+                    children.appendChild(createTreeElement(item, `[${index}]`, 0));
+                });
+                
+                keyElement.addEventListener('click', function() {
+                    const isExpanded = children.style.display !== 'none';
+                    if (isExpanded) {
+                        children.style.display = 'none';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📚 ${key} [${value.length}]</span>`;
+                    } else {
+                        children.style.display = 'block';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▼ 📖 ${key} [${value.length}]</span>`;
+                    }
+                });
+                
+                wrapper.appendChild(keyElement);
+                wrapper.appendChild(children);
+            } else {
+                // Primitive value
+                const element = document.createElement('div');
+                const valueStr = value === null ? 'null' : String(value);
+                const valueType = typeof value;
+                let color = '#4a5568';
+                let icon = '📄';
+                
+                if (valueType === 'string') { color = '#38a169'; icon = '📝'; }
+                else if (valueType === 'number') { color = '#d69e2e'; icon = '🔢'; }
+                else if (valueType === 'boolean') { color = '#9f7aea'; icon = '✅'; }
+                else if (value === null) { color = '#a0aec0'; icon = '❌'; }
+                
+                element.innerHTML = `<span style="color: #2d3748; font-weight: 600;">${icon} ${key}:</span> <span style="color: ${color};">${valueType === 'string' ? '"' + valueStr + '"' : valueStr}</span>`;
+                wrapper.appendChild(element);
+            }
+            
+            return wrapper;
+        }
+        
+        function expandAllNodes(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Find all clickable tree nodes (divs containing spans with cursor: pointer)
+            container.querySelectorAll('span[style*="cursor: pointer"]').forEach(span => {
+                if (span.innerHTML.includes('▶')) {
+                    span.parentElement.click();
+                }
+            });
+        }
+        
+        function collapseAllNodes(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Find all clickable tree nodes (divs containing spans with cursor: pointer)
+            container.querySelectorAll('span[style*="cursor: pointer"]').forEach(span => {
+                if (span.innerHTML.includes('▼')) {
+                    span.parentElement.click();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

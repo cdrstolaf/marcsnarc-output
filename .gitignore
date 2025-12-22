@@ -1,0 +1,20 @@
+# Exclude sensitive data files
+*.mrc
+*_analysis.json
+*_metadata.json
+
+# Keep only public web files:
+# - HTML display files (*.html)
+# - Optimized images (*.webp, *.jpg, *.png)
+# - Static assets for web display
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+*.log

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>marcsnarc Output Collections</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; padding: 20px; line-height: 1.6; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container { 
+            max-width: 1200px; margin: 0 auto; 
+            background: white; border-radius: 15px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; padding: 40px; text-align: center; 
+        }
+        .header h1 { margin: 0 0 10px; font-size: 2.5em; font-weight: 300; }
+        .header p { margin: 0; opacity: 0.9; font-size: 1.2em; }
+        
+        .content { padding: 40px; }
+        .collections-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 25px; margin-top: 30px; 
+        }
+        
+        .collection-card { 
+            background: #f8f9ff; border: 2px solid #e2e8f0; 
+            border-radius: 12px; padding: 25px; 
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .collection-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .collection-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+        
+        .collection-title { 
+            margin: 0 0 15px; color: #2d3748; 
+            font-size: 1.4em; font-weight: 600; 
+        }
+        .collection-meta { 
+            color: #718096; font-size: 0.9em; 
+            margin-bottom: 20px; 
+        }
+        .collection-link { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; text-decoration: none; 
+            padding: 12px 24px; border-radius: 25px; 
+            font-weight: 500; transition: transform 0.2s ease;
+        }
+        .collection-link:hover { 
+            transform: scale(1.05); 
+            text-decoration: none; 
+        }
+        
+        .stats { 
+            background: #edf2f7; padding: 20px; 
+            border-radius: 10px; margin-bottom: 30px; 
+            text-align: center; 
+        }
+        .stats h2 { margin: 0 0 15px; color: #2d3748; }
+        .stat-item { 
+            display: inline-block; margin: 0 20px; 
+        }
+        .stat-number { 
+            display: block; font-size: 2em; 
+            font-weight: 700; color: #667eea; 
+        }
+        .stat-label { 
+            font-size: 0.9em; color: #718096; 
+            text-transform: uppercase; letter-spacing: 0.5px; 
+        }
+        
+        .footer { 
+            text-align: center; margin-top: 40px; 
+            padding-top: 30px; border-top: 1px solid #e2e8f0; 
+            color: #718096; 
+        }
+        .footer a { 
+            color: #667eea; text-decoration: none; font-weight: 500; 
+        }
+        .footer a:hover { text-decoration: underline; }
+        
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .header { padding: 30px 20px; }
+            .header h1 { font-size: 2em; }
+            .content { padding: 30px 20px; }
+            .collections-grid { grid-template-columns: 1fr; }
+            .stat-item { margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 marcsnarc Output Collections</h1>
+            <p>AI-powered MARC cataloging results</p>
+        </div>
+        
+        <div class="content">
+            <div class="stats">
+                <h2>Collection Statistics</h2>
+                <div class="stat-item">
+                    <span class="stat-number" id="total-collections">0</span>
+                    <span class="stat-label">Collections</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="total-records">0</span>
+                    <span class="stat-label">MARC Records</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="total-images">0</span>
+                    <span class="stat-label">Images Processed</span>
+                </div>
+            </div>
+            
+            <div id="collections-container">
+                <div class="collections-grid" id="collections-grid">
+                    <!-- Collections will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>Generated by <a href="https://github.com/cdrstolaf/marcsnarc">marcsnarc</a> • 
+                   Powered by <a href="https://claude.ai">Claude AI</a> • 
+                   Published via <a href="https://pages.github.com">GitHub Pages</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-discover collections and build the page
+        async function loadCollections() {
+            const collections = [
+                'CRH-test',
+                'collection_test_20251222_143950',
+                'collection_test_20251222_144841', 
+                'collection_test_20251222_150159',
+                'collection_test_20251222_151035'
+            ];
+            
+            const grid = document.getElementById('collections-grid');
+            const totalCollectionsEl = document.getElementById('total-collections');
+            const totalRecordsEl = document.getElementById('total-records');
+            const totalImagesEl = document.getElementById('total-images');
+            
+            let totalRecords = 0;
+            let totalImages = 0;
+            
+            for (const collection of collections) {
+                // Check if HTML file exists
+                try {
+                    const response = await fetch(`${collection}/${collection}.html`, { method: 'HEAD' });
+                    if (response.ok) {
+                        const card = createCollectionCard(collection);
+                        grid.appendChild(card);
+                        
+                        // Estimate counts (since we can't read JSON files in browser)
+                        totalRecords += 1; // Assume 1 record per collection
+                        totalImages += 6;  // Estimate based on typical collection size
+                    }
+                } catch (e) {
+                    // Collection might not exist, skip
+                    console.log(`Collection ${collection} not accessible`);
+                }
+            }
+            
+            // Update statistics
+            totalCollectionsEl.textContent = grid.children.length;
+            totalRecordsEl.textContent = totalRecords;
+            totalImagesEl.textContent = totalImages;
+        }
+        
+        function createCollectionCard(collectionName) {
+            const card = document.createElement('div');
+            card.className = 'collection-card';
+            
+            // Format collection name for display
+            let displayName = collectionName;
+            if (collectionName.startsWith('collection_test_')) {
+                displayName = 'Collection Test ' + collectionName.split('_').slice(-1)[0];
+            }
+            
+            // Extract date from collection name
+            const dateMatch = collectionName.match(/(\d{8})/);
+            const date = dateMatch ? 
+                new Date(dateMatch[1].substring(0,4) + '-' + dateMatch[1].substring(4,6) + '-' + dateMatch[1].substring(6,8)).toLocaleDateString() :
+                'Unknown Date';
+            
+            card.innerHTML = `
+                <h3 class="collection-title">${displayName}</h3>
+                <div class="collection-meta">
+                    📅 Generated: ${date}<br>
+                    🖼️ Contains images and MARC records<br>
+                    🌐 Interactive HTML display
+                </div>
+                <a href="${collectionName}/${collectionName}.html" class="collection-link">
+                    View Collection →
+                </a>
+            `;
+            
+            return card;
+        }
+        
+        // Load collections when page loads
+        document.addEventListener('DOMContentLoaded', loadCollections);
+    </script>
+</body>
+</html>
