@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CS-test - MARC Records</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; line-height: 1.6; background: #fafafa; }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 2em; font-weight: 300; }
+        .header p { margin: 10px 0 0; opacity: 0.9; }
+        
+        /* Image Gallery */
+        .image-gallery { display: flex; gap: 15px; overflow-x: auto; padding: 20px 0; margin-bottom: 30px; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .thumbnail-container { flex-shrink: 0; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .thumbnail-container:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .thumbnail { width: 200px; height: 300px; object-fit: cover; border-radius: 8px; border: 3px solid #e0e0e0; transition: border-color 0.2s ease; }
+        .thumbnail-container:hover .thumbnail { border-color: #667eea; }
+        .thumbnail-label { text-align: center; margin-top: 8px; font-size: 0.85em; color: #666; font-weight: 500; word-break: break-word; max-width: 200px; }
+        .no-images { text-align: center; padding: 40px; color: #999; font-style: italic; background: white; border-radius: 10px; margin-bottom: 30px; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90vw; max-height: 90vh; }
+        .modal-image { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 15px; right: 20px; color: white; font-size: 30px; font-weight: bold; cursor: pointer; z-index: 1001; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: background 0.2s ease; }
+        .modal-close:hover { background: rgba(255,0,0,0.7); }
+        .modal-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 15px 20px; font-size: 18px; cursor: pointer; border-radius: 5px; transition: background 0.2s ease; }
+        .modal-nav:hover { background: rgba(0,0,0,0.8); }
+        .modal-prev { left: 20px; }
+        .modal-next { right: 20px; }
+        .modal-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 14px; }
+        
+        /* MARC Records */
+        .records-section h2 { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin: 30px 0 20px; }
+        .marc-record { background: white; border: none; margin-bottom: 25px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .marc-record h3 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .confidence { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); padding: 6px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px; color: #2c5530; font-weight: 500; font-size: 0.9em; }
+        .review-flag { background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); border: none; color: #d63031; padding: 6px 12px; border-radius: 20px; margin-bottom: 15px; font-weight: 500; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        th, td { padding: 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; width: 100px; }
+        .subfield-code { font-weight: bold; color: #667eea; background: #f8f9ff; padding: 2px 4px; border-radius: 3px; margin-right: 5px; }
+        .no-records { text-align: center; padding: 40px; color: #999; font-style: italic; background: white; border-radius: 10px; margin-bottom: 30px; }
+        
+        /* JSON Tree View */
+        .json-tree-section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .json-tree-section h2 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .tree-container { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #fafafa; max-height: 600px; overflow-y: auto; font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace; }
+        .expand-all-btn, .collapse-all-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-right: 10px; margin-bottom: 15px; font-size: 0.9em; transition: transform 0.2s ease; }
+        .expand-all-btn:hover, .collapse-all-btn:hover { transform: translateY(-1px); }
+        
+        /* Footer */
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9em; background: white; border-radius: 10px; margin-top: 30px; }
+        .footer a { color: #667eea; text-decoration: none; font-weight: 500; }
+        .footer a:hover { text-decoration: underline; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .thumbnail { width: 150px; height: 225px; }
+            .thumbnail-label { max-width: 150px; }
+            .modal-nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CS-test</h1>
+        <p>📚 MARC Records generated by marcsnarc on 2025-12-22 16:27:18</p>
+    </div>
+    
+    <div class='image-gallery'>
+
+                <div class='thumbnail-container' onclick='openModal(0)'>
+                    <img src='img_PXL_20251212_164911546.webp' alt='PXL_20251212_164911546.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164911546.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(1)'>
+                    <img src='img_PXL_20251212_164937723.webp' alt='PXL_20251212_164937723.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_164937723.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(2)'>
+                    <img src='img_PXL_20251212_165121702.webp' alt='PXL_20251212_165121702.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165121702.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(3)'>
+                    <img src='img_PXL_20251212_165136484.webp' alt='PXL_20251212_165136484.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165136484.jpg</div>
+                </div>
+                </div>
+
+    
+    <!-- Modal for image viewing -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <button class="modal-nav modal-prev" onclick="changeImage(-1)">‹</button>
+        <button class="modal-nav modal-next" onclick="changeImage(1)">›</button>
+        <div class="modal-content">
+            <img id="modalImage" class="modal-image" src="" alt="">
+        </div>
+        <div class="modal-counter" id="modalCounter"></div>
+    </div>
+    
+    <div class="records-section">
+        <h2>📋 MARC Records</h2>
+        <div class='marc-record'>
+<h3>Record 1</h3>
+<div class='confidence'>Confidence: 0.57</div>
+<div class='review-flag'>⚠️ Review Required</div>
+<table><tr><th>LDR</th><td>00000nam a200000 Ki 500</td></tr><tr><th>001</th><td>msn20251222222717</td></tr><tr><th>003</th><td>DLC</td></tr><tr><th>005</th><td>20251222222717.0</td></tr><tr><th>008</th><td>251222s1899                o     00chi und d</td></tr><tr><th>040</th><td><strong>__</strong> <span class="subfield-code">‡a</span>DLC <span class="subfield-code">‡b</span>eng <span class="subfield-code">‡c</span>DLC <span class="subfield-code">‡e</span>rda </td></tr><tr><th>245</th><td><strong>00</strong> <span class="subfield-code">‡a</span>CS-test </td></tr><tr><th>264</th><td><strong>_1</strong> <span class="subfield-code">‡c</span>1899 </td></tr><tr><th>300</th><td><strong>__</strong> <span class="subfield-code">‡a</span>4 items (various formats) </td></tr><tr><th>520</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Collection consists of 1 books, 2 serials, 1 other items. Items date from 1899 to 1899. </td></tr><tr><th>500</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Collection-level record for 4 items </td></tr><tr><th>500</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Provenance: Extracted from 4 images using marcsnarc </td></tr><tr><th>561</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Extracted from 4 images using marcsnarc </td></tr><tr><th>999</th><td><strong>__</strong> <span class="subfield-code">‡i</span>Generated by marcsnarc on 2025-12-22 <span class="subfield-code">‡s</span>marcsnarc </td></tr></table></div>
+
+    </div>
+    
+    
+            <div class='json-tree-section'>
+                <h2>📊 Analysis Data</h2>
+                <div class='tree-container' id='analysis-tree'></div>
+                <button class='expand-all-btn' onclick='expandAllNodes("analysis-tree")'>
+                    🔍 Expand All
+                </button>
+                <button class='collapse-all-btn' onclick='collapseAllNodes("analysis-tree")'>
+                    📁 Collapse All
+                </button>
+            </div>
+            
+            <div class='json-tree-section'>
+                <h2>📋 Processing Metadata</h2>
+                <div class='tree-container' id='metadata-tree'></div>
+                <button class='expand-all-btn' onclick='expandAllNodes("metadata-tree")'>
+                    🔍 Expand All
+                </button>
+                <button class='collapse-all-btn' onclick='collapseAllNodes("metadata-tree")'>
+                    📁 Collapse All
+                </button>
+            </div>
+            
+    
+    <div class="footer">
+        Generated with <a href="https://github.com/anthropics/marcsnarc">marcsnarc</a> - AI-powered MARC cataloging
+    </div>
+    
+    <script>
+        // Global variables for modal and JSON data
+        let currentImages = [];
+        let currentImageIndex = 0;
+        const analysisData = {"collection_analysis": {"item_count": 4, "formats": {"format_counts": {"book": 1, "newspaper/periodical": 1, "newspaper": 2}, "unique_formats": "{'newspaper', 'book', 'newspaper/periodical'}", "books": 1, "serials": 2, "ephemera": 0, "other": 1, "primary_format": "newspaper"}, "creators": {"creator_counts": {"Mu Xubai (慕旭白)": 1, "華美": 1}, "unique_creators": "{'Mu Xubai (慕旭白)', '華美'}", "items_with_creators": 2, "items_without_creators": 2, "dominant_creator": ["Mu Xubai (慕旭白)", 1]}, "dates": {"date_range": [1899, 1899], "earliest_date": 1899, "latest_date": 1899, "date_span": 0, "items_with_dates": 1, "date_counts": {"1899": 1}}, "languages": {"language_counts": {"chi": 4}, "unique_languages": "{'chi'}", "primary_language": "chi", "multilingual": false}, "subjects": {"subject_counts": {"Meeting records": 1, "Personal calendar": 1, "Shanghai history": 1, "Late Qing Dynasty": 1, "Social history": 1, "Chinese overseas community": 1, "Weekly news": 1, "Chinese diaspora": 1, "Chinese American community": 1, "Chinese language newspaper": 1, "Overseas Chinese publications": 1, "Chinese American newspapers": 1, "Chinese language press": 1, "Overseas Chinese community news": 1}, "unique_subjects": "{'Shanghai history', 'Overseas Chinese publications', 'Chinese American newspapers', 'Chinese overseas community', 'Weekly news', 'Chinese American community', 'Chinese diaspora', 'Chinese language newspaper', 'Social history', 'Late Qing Dynasty', 'Meeting records', 'Chinese language press', 'Personal calendar', 'Overseas Chinese community news'}", "items_with_subjects": 4, "common_subjects": [["Meeting records", 1], ["Personal calendar", 1], ["Shanghai history", 1], ["Late Qing Dynasty", 1], ["Social history", 1]], "subject_coherence": 1.75}, "provenance": {"collection_provenance": "Extracted from 4 images using marcsnarc", "item_provenances": {}, "consistency_score": 1.0, "has_provenance": true}, "identifiers": {"items_with_isbn": 0, "items_with_issn": 0, "items_with_oclc": 0, "items_with_lccn": 0, "identifier_coverage": 0.0}, "physical_characteristics": {"extent_variety": 3, "dimension_variety": 1, "physical_coherence": 0.5}, "format_diversity": 3, "creator_diversity": 2, "has_books_serials": true, "shared_provenance": true, "temporal_coherence": 1.0, "workflow_type": "collection_images_to_marc", "collection_name": "CS-test", "processing_timestamp": "2025-12-22T16:27:17.708976", "total_records": 1, "approach": "collection"}, "batch_analysis": {"collection_name": "CS-test", "total_images": 4, "successful_analyses": 4, "failed_analyses": 0, "individual_results": [{"image_path": "examples/Chinese Serials/PXL_20251212_164911546.jpg", "extracted_data": {"title": "Mu Xubai jiyue [Mu Xubai Room Meeting Calendar]", "creator": {"name": "Mu Xubai (慕旭白)", "type": "personal", "source": "claude_analysis", "romanization": "Mu Xubai"}, "publication_place": "Shanghai", "publication_date": "1899-1904", "normalized_date": {"normalized": "1899", "end_date": "1904", "circa": false, "uncertain": false, "original": "1899-1904"}, "format": "book", "extent": "1 volume", "language": "chi", "original_script_title": "Chinese characters (traditional)", "other_identifiers": "M.3", "subjects": [{"heading": "Meeting records", "type": "topical", "source": "claude_analysis"}, {"heading": "Personal calendar", "type": "topical", "source": "claude_analysis"}, {"heading": "Shanghai history", "type": "topical", "source": "claude_analysis"}, {"heading": "Late Qing Dynasty", "type": "topical", "source": "claude_analysis"}, {"heading": "Social history", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Item appears to be a heavily worn and damaged book with dark green cloth spine and maroon/burgundy cover", "source": "image_analysis"}, {"text": "Significant deterioration visible with paint or coating loss exposing underlying material", "source": "image_analysis"}, {"text": "Accompanied by a catalog card with detailed provenance and biographical information", "source": "image_analysis"}, {"text": "Card indicates this is a meeting/appointment diary from 1899-1904", "source": "image_analysis"}, {"text": "Mentions connection to various historical figures and organizations in Shanghai", "source": "image_analysis"}, {"text": "References Condition, Content compared to material in other repositories", "source": "image_analysis"}, {"text": "Card includes references to Northwestern University collection", "source": "image_analysis"}, {"text": "Original item shows signs of age-related deterioration including peeling, discoloration, and material loss", "source": "image_analysis"}, {"text": "Classification number M.3 visible on catalog card", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.5249999999999999, "publication": 0.30333333333333334, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.49716666666666665}, "overall_confidence": 0.49716666666666665, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "慕旭白 [Mu Xubai] - meeting/appointment records from 1899-1904 period in Shanghai during late Qing Dynasty", "language": "English with Chinese romanization", "location": "catalog card"}, {"text": "M.3", "language": "alphanumeric classification", "location": "catalog card lower left"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 1}, {"image_path": "examples/Chinese Serials/PXL_20251212_165136484.jpg", "extracted_data": {"title": "華僑週報", "subtitle": "Hwa Chiao Weekly", "publisher": "華僑週報社", "publication_place": "Hong Kong", "publication_date": "第十一期 (Issue 11)", "normalized_date": {"normalized": null, "end_date": null, "circa": false, "uncertain": true, "original": "第十一期 (Issue 11)"}, "format": "newspaper/periodical", "extent": "Single newspaper page", "language": "chi", "original_script_title": "Traditional Chinese", "other_identifiers": "Issue number 11", "subjects": [{"heading": "Chinese overseas community", "type": "topical", "source": "claude_analysis"}, {"heading": "Weekly news", "type": "topical", "source": "claude_analysis"}, {"heading": "Chinese diaspora", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "This appears to be a page from a Chinese language weekly newspaper aimed at overseas Chinese communities", "source": "image_analysis"}, {"text": "Contains multiple columns of text in traditional Chinese characters", "source": "image_analysis"}, {"text": "Features a prominent red stamp/logo reading '華僑週報' (Hwa Chiao Weekly)", "source": "image_analysis"}, {"text": "Includes English text 'HWA CHIAO WEEKLY' visible on the right side", "source": "image_analysis"}, {"text": "Bottom portion shows another publication or advertisement for 'LUMASUN' (樂民新報)", "source": "image_analysis"}, {"text": "Publication appears to be historical, printed on aged paper", "source": "image_analysis"}, {"text": "Contains table of contents or index on the left side", "source": "image_analysis"}, {"text": "Text layout follows traditional Chinese right-to-left, top-to-bottom reading order", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.2, "publication": 0.45499999999999996, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.44625}, "overall_confidence": 0.44625, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "華僑週報", "language": "Traditional Chinese", "location": "title/masthead"}, {"text": "HWA CHIAO WEEKLY", "language": "English", "location": "title/masthead"}, {"text": "第十一期", "language": "Traditional Chinese", "location": "issue number area"}, {"text": "樂民新報 LUMASUN", "language": "Chinese and English", "location": "bottom advertisement/supplement"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided", "No creator/author information found"], "review_required": true, "sequence_number": 2}, {"image_path": "examples/Chinese Serials/PXL_20251212_165121702.jpg", "extracted_data": {"title": "華美週刊", "creator": {"name": "華美", "type": "corporate", "source": "claude_analysis", "romanization": "Hua Mei"}, "publisher": "華美週刊社 (Hua Mei Weekly/HUAMEI Publishing)", "publication_place": "Likely Pittsburgh, Pennsylvania (based on visible location text)", "format": "newspaper", "extent": "Single issue/page", "dimensions": "Standard newspaper format", "language": "chi", "original_script_title": "Traditional Chinese characters", "subjects": [{"heading": "Chinese American community", "type": "topical", "source": "claude_analysis"}, {"heading": "Chinese language newspaper", "type": "topical", "source": "claude_analysis"}, {"heading": "Overseas Chinese publications", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "This appears to be a page from a Chinese-American weekly newspaper called Hua Mei Weekly (華美週刊)", "source": "image_analysis"}, {"text": "The large red stamp/logo contains the characters 華美 (Hua Mei) vertically arranged", "source": "image_analysis"}, {"text": "Text 'HUA MEI WEEKLY' visible in English at top left", "source": "image_analysis"}, {"text": "Contains multiple columns of traditional Chinese text", "source": "image_analysis"}, {"text": "Publication information visible on left side includes address and publication details", "source": "image_analysis"}, {"text": "Another newspaper titled '亞美遜' visible at top edge", "source": "image_analysis"}, {"text": "The page appears aged with some discoloration", "source": "image_analysis"}, {"text": "Contains what appears to be classified listings or directory information on the right side", "source": "image_analysis"}, {"text": "Visible location text mentions Pittsburgh, PA", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.5249999999999999, "publication": 0.30333333333333334, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.49716666666666665}, "overall_confidence": 0.49716666666666665, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "華美週刊 HUA MEI WEEKLY", "language": "Chinese and English", "location": "title/masthead area"}, {"text": "THE HUA MEI\nPittsburgh, Coraoplis, Pa.\nP.O. Box 24\nWe Admire Roberts and...\n2nd, ISSUE of fifteen\nAddison Lane 882...\nL.P.O. BOX 11 Ohio", "language": "English", "location": "publication information box, left side"}, {"text": "華美", "language": "Chinese", "location": "center logo/stamp"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 3}, {"image_path": "examples/Chinese Serials/PXL_20251212_164937723.jpg", "extracted_data": {"title": "華美週報", "publisher": "華美週報社 (Hwa Mei Weekly publisher)", "publication_place": "Likely United States (given Chinese-American context)", "format": "newspaper", "extent": "Single newspaper page", "language": "chi", "original_script_title": "Traditional Chinese characters", "subjects": [{"heading": "Chinese American newspapers", "type": "topical", "source": "claude_analysis"}, {"heading": "Chinese language press", "type": "topical", "source": "claude_analysis"}, {"heading": "Overseas Chinese community news", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "The title '華美週報' (Hwa Mei Weekly) appears prominently in red characters in a bordered box on the left side", "source": "image_analysis"}, {"text": "Text 'HWA MEI WEEKLY' appears in English above the Chinese title", "source": "image_analysis"}, {"text": "Contains English text at bottom: 'THE VOICE OF THE CHINESE IN AMERICA'", "source": "image_analysis"}, {"text": "Contains publisher information and address details in Chinese", "source": "image_analysis"}, {"text": "Main body consists of Chinese text in traditional characters arranged in columns", "source": "image_analysis"}, {"text": "Newspaper appears aged with yellowing and some staining", "source": "image_analysis"}, {"text": "Publication appears to serve the Chinese-American community", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.2, "publication": 0.30333333333333334, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.41591666666666666}, "overall_confidence": 0.41591666666666666, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "華美週報 HWA MEI WEEKLY", "language": "Chinese and English", "location": "left side logo/masthead"}, {"text": "THE VOICE OF THE CHINESE IN AMERICA", "language": "English", "location": "bottom of logo box"}, {"text": "《華美週報》刊期每星期三出版於十三年癸亥", "language": "Chinese", "location": "publication information section"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided", "No creator/author information found"], "review_required": true, "sequence_number": 4}], "collection_analysis": {"total_items": 4, "successful_extractions": 4, "common_characteristics": {"primary_language": "chi", "language_distribution": {"chi": 4}, "primary_format": "newspaper", "format_distribution": {"book": 1, "newspaper/periodical": 1, "newspaper": 2}, "publishers": {"華僑週報社": 1, "華美週刊社 (Hua Mei Weekly/HUAMEI Publishing)": 1, "華美週報社 (Hwa Mei Weekly publisher)": 1}}, "quality_assessment": {"average_confidence": 0.464125, "high_confidence_items": 0, "low_confidence_items": 4, "confidence_range": [0.41591666666666666, 0.49716666666666665]}, "recommendations": ["More than 30% of items have low confidence - consider manual review", "4 items contain CJK characters - verify romanization"]}, "batch_confidence": 0.464125, "processing_timestamp": "2025-12-22T16:27:17.695580"}, "individual_extractions": [{"image_path": "examples/Chinese Serials/PXL_20251212_164911546.jpg", "extraction_confidence": 0.49716666666666665, "extracted_fields": ["title", "creator", "publication_place", "publication_date", "normalized_date", "format", "extent", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Chinese Serials/PXL_20251212_165136484.jpg", "extraction_confidence": 0.44625, "extracted_fields": ["title", "subtitle", "publisher", "publication_place", "publication_date", "normalized_date", "format", "extent", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Chinese Serials/PXL_20251212_165121702.jpg", "extraction_confidence": 0.49716666666666665, "extracted_fields": ["title", "creator", "publisher", "publication_place", "format", "extent", "dimensions", "language", "original_script_title", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Chinese Serials/PXL_20251212_164937723.jpg", "extraction_confidence": 0.41591666666666666, "extracted_fields": ["title", "publisher", "publication_place", "format", "extent", "language", "original_script_title", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}]};
+        const metadataData = {"workflow_type": "collection_images_to_marc", "collection_name": "CS-test", "processing_result": {"approach": "collection", "records_generated": 1, "review_required": true, "groupings": {"approach": "collection", "total_items": 4, "groups": [{"type": "collection", "items": ["Mu Xubai jiyue [Mu Xubai Room Meeting Calendar]", "華僑週報", "華美週刊", "華美週報"], "record_type": "collection"}]}}, "collection_data": {"total_items": 4, "source_images": ["examples/Chinese Serials/PXL_20251212_164911546.jpg", "examples/Chinese Serials/PXL_20251212_165136484.jpg", "examples/Chinese Serials/PXL_20251212_165121702.jpg", "examples/Chinese Serials/PXL_20251212_164937723.jpg"], "provenance": "Extracted from 4 images using marcsnarc"}, "batch_analysis_summary": {"total_images": 4, "successful_analyses": 4, "batch_confidence": 0.464125}, "processing_timestamp": "2025-12-22T16:27:17.709001"};
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize images array from gallery
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            currentImages = Array.from(thumbnails).map(img => ({
+                src: img.src,
+                alt: img.alt
+            }));
+            
+            // Initialize JSON trees
+            if (analysisData && Object.keys(analysisData).length > 0) {
+                renderJsonTree('analysis-tree', analysisData);
+            }
+            if (metadataData && Object.keys(metadataData).length > 0) {
+                renderJsonTree('metadata-tree', metadataData);
+            }
+        });
+        
+        // Modal functions
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const counter = document.getElementById('modalCounter');
+            
+            if (currentImages[index]) {
+                modalImage.src = currentImages[index].src;
+                modalImage.alt = currentImages[index].alt;
+                counter.textContent = `${index + 1} of ${currentImages.length}`;
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function changeImage(direction) {
+            currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
+            openModal(currentImageIndex);
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                if (e.key === 'Escape') closeModal();
+                if (e.key === 'ArrowLeft') changeImage(-1);
+                if (e.key === 'ArrowRight') changeImage(1);
+            }
+        });
+        
+        // Close modal on background click
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        // JSON Tree rendering functions
+        function renderJsonTree(containerId, data) {
+            const container = document.getElementById(containerId);
+            if (!container || !data) return;
+            
+            container.innerHTML = '';
+            const tree = createTreeElement(data, '', 0);
+            container.appendChild(tree);
+        }
+        
+        function createTreeElement(value, key, level) {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginLeft = `${level * 20}px`;
+            wrapper.style.marginBottom = '3px';
+            
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                // Object
+                const keyElement = document.createElement('div');
+                keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📁 ${key} {${Object.keys(value).length}}</span>`;
+                keyElement.style.userSelect = 'none';
+                
+                const children = document.createElement('div');
+                children.style.display = 'none';
+                children.style.borderLeft = '2px solid #e2e8f0';
+                children.style.marginLeft = '15px';
+                children.style.paddingLeft = '10px';
+                
+                Object.entries(value).forEach(([childKey, childValue]) => {
+                    children.appendChild(createTreeElement(childValue, childKey, 0));
+                });
+                
+                keyElement.addEventListener('click', function() {
+                    const isExpanded = children.style.display !== 'none';
+                    if (isExpanded) {
+                        children.style.display = 'none';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📁 ${key} {${Object.keys(value).length}}</span>`;
+                    } else {
+                        children.style.display = 'block';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▼ 📂 ${key} {${Object.keys(value).length}}</span>`;
+                    }
+                });
+                
+                wrapper.appendChild(keyElement);
+                wrapper.appendChild(children);
+            } else if (Array.isArray(value)) {
+                // Array
+                const keyElement = document.createElement('div');
+                keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📚 ${key} [${value.length}]</span>`;
+                keyElement.style.userSelect = 'none';
+                
+                const children = document.createElement('div');
+                children.style.display = 'none';
+                children.style.borderLeft = '2px solid #e2e8f0';
+                children.style.marginLeft = '15px';
+                children.style.paddingLeft = '10px';
+                
+                value.forEach((item, index) => {
+                    children.appendChild(createTreeElement(item, `[${index}]`, 0));
+                });
+                
+                keyElement.addEventListener('click', function() {
+                    const isExpanded = children.style.display !== 'none';
+                    if (isExpanded) {
+                        children.style.display = 'none';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📚 ${key} [${value.length}]</span>`;
+                    } else {
+                        children.style.display = 'block';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▼ 📖 ${key} [${value.length}]</span>`;
+                    }
+                });
+                
+                wrapper.appendChild(keyElement);
+                wrapper.appendChild(children);
+            } else {
+                // Primitive value
+                const element = document.createElement('div');
+                const valueStr = value === null ? 'null' : String(value);
+                const valueType = typeof value;
+                let color = '#4a5568';
+                let icon = '📄';
+                
+                if (valueType === 'string') { color = '#38a169'; icon = '📝'; }
+                else if (valueType === 'number') { color = '#d69e2e'; icon = '🔢'; }
+                else if (valueType === 'boolean') { color = '#9f7aea'; icon = '✅'; }
+                else if (value === null) { color = '#a0aec0'; icon = '❌'; }
+                
+                element.innerHTML = `<span style="color: #2d3748; font-weight: 600;">${icon} ${key}:</span> <span style="color: ${color};">${valueType === 'string' ? '"' + valueStr + '"' : valueStr}</span>`;
+                wrapper.appendChild(element);
+            }
+            
+            return wrapper;
+        }
+        
+        function expandAllNodes(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Find all clickable tree nodes (divs containing spans with cursor: pointer)
+            container.querySelectorAll('span[style*="cursor: pointer"]').forEach(span => {
+                if (span.innerHTML.includes('▶')) {
+                    span.parentElement.click();
+                }
+            });
+        }
+        
+        function collapseAllNodes(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Find all clickable tree nodes (divs containing spans with cursor: pointer)
+            container.querySelectorAll('span[style*="cursor: pointer"]').forEach(span => {
+                if (span.innerHTML.includes('▼')) {
+                    span.parentElement.click();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -62,6 +62,17 @@
             color: #718096; font-size: 0.9em; 
             margin-bottom: 20px; 
         }
+        .collection-meta .confidence {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .confidence.high { background: #d4edda; color: #155724; }
+        .confidence.medium { background: #fff3cd; color: #856404; }
+        .confidence.low { background: #f8d7da; color: #721c24; }
+        
         .collection-link { 
             display: inline-block; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
@@ -102,6 +113,11 @@
         }
         .footer a:hover { text-decoration: underline; }
         
+        .last-updated {
+            font-size: 0.9em; color: #718096; 
+            margin-bottom: 20px; text-align: center;
+        }
+        
         @media (max-width: 768px) {
             body { padding: 10px; }
             .header { padding: 30px 20px; }
@@ -120,25 +136,29 @@
         </div>
         
         <div class="content">
+            <div class="last-updated">
+                Last updated: 2025-12-22 at 16:33:08
+            </div>
+            
             <div class="stats">
                 <h2>Collection Statistics</h2>
                 <div class="stat-item">
-                    <span class="stat-number" id="total-collections">0</span>
+                    <span class="stat-number">8</span>
                     <span class="stat-label">Collections</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number" id="total-records">0</span>
+                    <span class="stat-number">8</span>
                     <span class="stat-label">MARC Records</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number" id="total-images">0</span>
+                    <span class="stat-number">41</span>
                     <span class="stat-label">Images Processed</span>
                 </div>
             </div>
             
             <div id="collections-container">
                 <div class="collections-grid" id="collections-grid">
-                    <!-- Collections will be loaded here -->
+                    <!-- Collections will be loaded here by JavaScript -->
                 </div>
             </div>
             
@@ -151,72 +171,134 @@
     </div>
     
     <script>
-        // Auto-discover collections and build the page
-        async function loadCollections() {
-            const collections = [
-                'CRH-test',
-                'collection_test_20251222_143950',
-                'collection_test_20251222_144841', 
-                'collection_test_20251222_150159',
-                'collection_test_20251222_151035'
-            ];
-            
+        // Collection data from Python
+        const collections = [
+        {
+                "name": "JP-test",
+                "display_name": "JP Test",
+                "timestamp": "2025-12-22T16:27:54.279813",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.37762500000000004,
+                "review_required": true,
+                "html_file": "JP-test.html"
+        },
+        {
+                "name": "CS-test",
+                "display_name": "CS Test",
+                "timestamp": "2025-12-22T16:27:17.709001",
+                "total_images": 4,
+                "records_generated": 1,
+                "confidence_score": 0.464125,
+                "review_required": true,
+                "html_file": "CS-test.html"
+        },
+        {
+                "name": "witwii-test",
+                "display_name": "witwii Test",
+                "timestamp": "2025-12-22T16:27:12.556937",
+                "total_images": 1,
+                "records_generated": 1,
+                "confidence_score": 0.5640000000000001,
+                "review_required": true,
+                "html_file": "witwii-test.html"
+        },
+        {
+                "name": "CRH-test",
+                "display_name": "CRH Test",
+                "timestamp": "2025-12-22T16:16:19.184300",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.47418055555555555,
+                "review_required": true,
+                "html_file": "CRH-test.html"
+        },
+        {
+                "name": "collection_test_20251222_151035",
+                "display_name": "Collection Test (12/22/25)",
+                "timestamp": "2025-12-22T15:12:08.734097",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.4923472222222222,
+                "review_required": true,
+                "html_file": "collection_test_20251222_151035.html"
+        },
+        {
+                "name": "collection_test_20251222_150159",
+                "display_name": "Collection Test (12/22/25)",
+                "timestamp": "2025-12-22T15:03:37.448198",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.468625,
+                "review_required": true,
+                "html_file": "collection_test_20251222_150159.html"
+        },
+        {
+                "name": "collection_test_20251222_144841",
+                "display_name": "Collection Test (12/22/25)",
+                "timestamp": "2025-12-22T14:50:37.158652",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.5095694444444444,
+                "review_required": true,
+                "html_file": "collection_test_20251222_144841.html"
+        },
+        {
+                "name": "collection_test_20251222_143950",
+                "display_name": "Collection Test (12/22/25)",
+                "timestamp": "2025-12-22T14:41:29.485257",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.4841111111111111,
+                "review_required": true,
+                "html_file": "collection_test_20251222_143950.html"
+        }
+];
+        
+        function loadCollections() {
             const grid = document.getElementById('collections-grid');
-            const totalCollectionsEl = document.getElementById('total-collections');
-            const totalRecordsEl = document.getElementById('total-records');
-            const totalImagesEl = document.getElementById('total-images');
             
-            let totalRecords = 0;
-            let totalImages = 0;
-            
-            for (const collection of collections) {
-                // Check if HTML file exists
-                try {
-                    const response = await fetch(`${collection}/${collection}.html`, { method: 'HEAD' });
-                    if (response.ok) {
-                        const card = createCollectionCard(collection);
-                        grid.appendChild(card);
-                        
-                        // Estimate counts (since we can't read JSON files in browser)
-                        totalRecords += 1; // Assume 1 record per collection
-                        totalImages += 6;  // Estimate based on typical collection size
-                    }
-                } catch (e) {
-                    // Collection might not exist, skip
-                    console.log(`Collection ${collection} not accessible`);
-                }
-            }
-            
-            // Update statistics
-            totalCollectionsEl.textContent = grid.children.length;
-            totalRecordsEl.textContent = totalRecords;
-            totalImagesEl.textContent = totalImages;
+            collections.forEach(collection => {
+                const card = createCollectionCard(collection);
+                grid.appendChild(card);
+            });
         }
         
-        function createCollectionCard(collectionName) {
+        function createCollectionCard(collection) {
             const card = document.createElement('div');
             card.className = 'collection-card';
             
-            // Format collection name for display
-            let displayName = collectionName;
-            if (collectionName.startsWith('collection_test_')) {
-                displayName = 'Collection Test ' + collectionName.split('_').slice(-1)[0];
+            // Format timestamp for display
+            let displayDate = 'Unknown Date';
+            if (collection.timestamp) {
+                try {
+                    const date = new Date(collection.timestamp);
+                    displayDate = date.toLocaleDateString() + ' at ' + date.toLocaleTimeString();
+                } catch (e) {
+                    // Keep default if parsing fails
+                }
             }
             
-            // Extract date from collection name
-            const dateMatch = collectionName.match(/(\d{8})/);
-            const date = dateMatch ? 
-                new Date(dateMatch[1].substring(0,4) + '-' + dateMatch[1].substring(4,6) + '-' + dateMatch[1].substring(6,8)).toLocaleDateString() :
-                'Unknown Date';
+            // Confidence class
+            let confidenceClass = 'low';
+            if (collection.confidence_score > 0.75) confidenceClass = 'high';
+            else if (collection.confidence_score > 0.5) confidenceClass = 'medium';
+            
+            // Review status
+            const reviewStatus = collection.review_required ? 
+                '⚠️ Review Required' : '✅ Approved';
             
             card.innerHTML = `
-                <h3 class="collection-title">${displayName}</h3>
+                <h3 class="collection-title">${collection.display_name}</h3>
                 <div class="collection-meta">
-                    📅 Generated: ${date}<br>
-                    🖼️ Contains images and MARC records<br>
-                    🌐 Interactive HTML display
+                    📅 Generated: ${displayDate}<br>
+                    🖼️ Images: ${collection.total_images} | 📋 Records: ${collection.records_generated}<br>
+                    <span class="confidence ${confidenceClass}">
+                        Confidence: ${(collection.confidence_score * 100).toFixed(1)}%
+                    </span><br>
+                    ${reviewStatus}
                 </div>
-                <a href="${collectionName}/${collectionName}.html" class="collection-link">
+                <a href="${collection.name}/${collection.html_file}" class="collection-link">
                     View Collection →
                 </a>
             `;
