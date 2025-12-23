@@ -64,16 +64,15 @@
         
         /* Collections List */
         .collections-list {
-            display: flex; flex-direction: column; gap: 1px;
+            display: flex; flex-direction: column;
         }
         .collection-row {
             background: white; border: 1px solid #e2e8f0;
+            border-top: none; /* Connect seamlessly to header */
             display: flex; align-items: center; padding: 20px;
             transition: all 0.3s ease; position: relative;
         }
-        .collection-row:first-child { border-radius: 10px 10px 0 0; }
         .collection-row:last-child { border-radius: 0 0 10px 10px; }
-        .collection-row:only-child { border-radius: 10px; }
         .collection-row:nth-child(even) { background: #f8f9ff; }
         .collection-row:hover {
             background: #eef2ff; border-color: #667eea;
@@ -202,7 +201,7 @@
         
         <div class="content">
             <div class="last-updated">
-                Last updated: 2025-12-23 at 15:03:30
+                Last updated: 2025-12-23 at 15:03:45
             </div>
             
             <div class="stats">
