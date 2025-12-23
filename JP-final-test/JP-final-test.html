@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>JP-final-test - MARC Records</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; line-height: 1.6; background: #fafafa; }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 2em; font-weight: 300; }
+        .header p { margin: 10px 0 0; opacity: 0.9; }
+        
+        /* Image Gallery */
+        .image-gallery { display: flex; gap: 15px; overflow-x: auto; padding: 20px 0; margin-bottom: 30px; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .thumbnail-container { flex-shrink: 0; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .thumbnail-container:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .thumbnail { width: 200px; height: 300px; object-fit: cover; border-radius: 8px; border: 3px solid #e0e0e0; transition: border-color 0.2s ease; }
+        .thumbnail-container:hover .thumbnail { border-color: #667eea; }
+        .thumbnail-label { text-align: center; margin-top: 8px; font-size: 0.85em; color: #666; font-weight: 500; word-break: break-word; max-width: 200px; }
+        .no-images { text-align: center; padding: 40px; color: #999; font-style: italic; background: white; border-radius: 10px; margin-bottom: 30px; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90vw; max-height: 90vh; }
+        .modal-image { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 15px; right: 20px; color: white; font-size: 30px; font-weight: bold; cursor: pointer; z-index: 1001; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: background 0.2s ease; }
+        .modal-close:hover { background: rgba(255,0,0,0.7); }
+        .modal-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 15px 20px; font-size: 18px; cursor: pointer; border-radius: 5px; transition: background 0.2s ease; }
+        .modal-nav:hover { background: rgba(0,0,0,0.8); }
+        .modal-prev { left: 20px; }
+        .modal-next { right: 20px; }
+        .modal-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 14px; }
+        
+        /* MARC Records */
+        .records-section h2 { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin: 30px 0 20px; }
+        .marc-record { background: white; border: none; margin-bottom: 25px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .marc-record h3 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .confidence { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); padding: 6px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px; color: #2c5530; font-weight: 500; font-size: 0.9em; }
+        .review-flag { background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); border: none; color: #d63031; padding: 6px 12px; border-radius: 20px; margin-bottom: 15px; font-weight: 500; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        th, td { padding: 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; width: 100px; }
+        .subfield-code { font-weight: bold; color: #667eea; background: #f8f9ff; padding: 2px 4px; border-radius: 3px; margin-right: 5px; }
+        .no-records { text-align: center; padding: 40px; color: #999; font-style: italic; background: white; border-radius: 10px; margin-bottom: 30px; }
+        
+        /* External API Results */
+        .api-results-section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .api-results-section h2 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .api-summary { background: #f8f9ff; border: 1px solid #e0e6ff; border-radius: 6px; padding: 12px; margin-bottom: 20px; }
+        .api-summary p { margin: 0; color: #333; font-size: 0.95em; }
+        .api-source { margin-bottom: 20px; }
+        .api-source h3 { color: #667eea; margin-bottom: 10px; font-size: 1.1em; }
+        .api-matches { background: #f8f9ff; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .api-match { background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+        .api-match:last-child { margin-bottom: 0; }
+        .match-title { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .match-author { color: #666; margin-bottom: 5px; }
+        .match-details { font-size: 0.9em; color: #888; }
+        .no-matches { text-align: center; padding: 20px; color: #999; font-style: italic; }
+        .api-no-results { }
+        .search-details { background: #f8f9fa; border-radius: 6px; padding: 15px; margin-top: 15px; }
+        .search-details h4 { margin-top: 0; color: #495057; }
+        .search-details ul { margin: 10px 0; padding-left: 20px; }
+        .search-details li { margin-bottom: 5px; color: #6c757d; }
+        .search-details em { color: #6c757d; }
+        .authority-result { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; margin-right: 10px; }
+        .authority-valid { background: #d4edda; color: #155724; }
+        .authority-invalid { background: #f8d7da; color: #721c24; }
+        
+        /* JSON Tree View */
+        .json-tree-section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .json-tree-section h2 { margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-weight: 600; }
+        .tree-container { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background: #fafafa; max-height: 600px; overflow-y: auto; font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace; }
+        .expand-all-btn, .collapse-all-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-right: 10px; margin-bottom: 15px; font-size: 0.9em; transition: transform 0.2s ease; }
+        .expand-all-btn:hover, .collapse-all-btn:hover { transform: translateY(-1px); }
+        
+        /* Footer */
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9em; background: white; border-radius: 10px; margin-top: 30px; }
+        .footer a { color: #667eea; text-decoration: none; font-weight: 500; }
+        .footer a:hover { text-decoration: underline; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .thumbnail { width: 150px; height: 225px; }
+            .thumbnail-label { max-width: 150px; }
+            .modal-nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>JP-final-test</h1>
+        <p>📚 MARC Records generated by marcsnarc on 2025-12-23 11:51:52</p>
+    </div>
+    
+    <div class='image-gallery'>
+
+                <div class='thumbnail-container' onclick='openModal(0)'>
+                    <img src='img_PXL_20251212_165802824.webp' alt='PXL_20251212_165802824.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165802824.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(1)'>
+                    <img src='img_PXL_20251212_165807773.webp' alt='PXL_20251212_165807773.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165807773.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(2)'>
+                    <img src='img_PXL_20251212_165816342.webp' alt='PXL_20251212_165816342.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165816342.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(3)'>
+                    <img src='img_PXL_20251212_165825246.webp' alt='PXL_20251212_165825246.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165825246.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(4)'>
+                    <img src='img_PXL_20251212_165855357.webp' alt='PXL_20251212_165855357.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165855357.jpg</div>
+                </div>
+                
+                <div class='thumbnail-container' onclick='openModal(5)'>
+                    <img src='img_PXL_20251212_165928834.webp' alt='PXL_20251212_165928834.jpg' class='thumbnail' loading='lazy'>
+                    <div class='thumbnail-label'>PXL_20251212_165928834.jpg</div>
+                </div>
+                </div>
+
+    
+    <!-- Modal for image viewing -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <button class="modal-nav modal-prev" onclick="changeImage(-1)">‹</button>
+        <button class="modal-nav modal-next" onclick="changeImage(1)">›</button>
+        <div class="modal-content">
+            <img id="modalImage" class="modal-image" src="" alt="">
+        </div>
+        <div class="modal-counter" id="modalCounter"></div>
+    </div>
+    
+    <div class="records-section">
+        <h2>📋 MARC Records</h2>
+        <div class='marc-record'>
+<h3>Record 1</h3>
+<div class='confidence'>Confidence: 0.47</div>
+<div class='review-flag'>⚠️ Review Required</div>
+<table><tr><th>LDR</th><td>00000nam a200000 Ki 500</td></tr><tr><th>001</th><td>msn20251223175151</td></tr><tr><th>003</th><td>DLC</td></tr><tr><th>005</th><td>20251223175151.0</td></tr><tr><th>008</th><td>251223m19372006            o     00jpn und d</td></tr><tr><th>040</th><td><strong>__</strong> <span class="subfield-code">‡a</span>DLC <span class="subfield-code">‡b</span>eng <span class="subfield-code">‡c</span>DLC <span class="subfield-code">‡e</span>rda </td></tr><tr><th>245</th><td><strong>00</strong> <span class="subfield-code">‡a</span>JP-final-test </td></tr><tr><th>264</th><td><strong>_1</strong> <span class="subfield-code">‡c</span>1937 </td></tr><tr><th>300</th><td><strong>__</strong> <span class="subfield-code">‡a</span>6 items (various formats) </td></tr><tr><th>520</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Collection consists of 2 books, 1 serials, 3 other items. Items date from 1937 to 2006. </td></tr><tr><th>500</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Collection-level record for 6 items </td></tr><tr><th>500</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Provenance: Extracted from 6 images using marcsnarc </td></tr><tr><th>561</th><td><strong>__</strong> <span class="subfield-code">‡a</span>Extracted from 6 images using marcsnarc </td></tr><tr><th>650</th><td><strong>_0</strong> <span class="subfield-code">‡a</span>Sino-Japanese War (1937-1945) </td></tr><tr><th>650</th><td><strong>_0</strong> <span class="subfield-code">‡a</span>World War II </td></tr><tr><th>999</th><td><strong>__</strong> <span class="subfield-code">‡i</span>Generated by marcsnarc on 2025-12-23 <span class="subfield-code">‡s</span>marcsnarc </td></tr></table></div>
+
+    </div>
+    
+    <div class="api-results-section">
+<h2>🌐 External API Results</h2>
+<div class="api-summary">
+<p><strong>Search Summary:</strong> 2 item(s) searched across WorldCat, Library of Congress, and Alma catalogs</p>
+</div>
+<div class="api-no-results">
+<div class="no-matches">External catalog searches were performed but no matches were found.</div>
+<div class="search-details">
+<p><strong>Search Status by Service:</strong></p>
+<ul>
+<li><strong>📚 WorldCat:</strong> Search attempted - likely failed due to server issues or no matches</li>
+<li><strong>🏛️ Library of Congress:</strong> Authority validation performed</li>
+<li><strong>🎓 Alma Catalog:</strong> Local catalog searched</li>
+</ul>
+<p><em>Check the processing logs for detailed error messages.</em></p>
+</div>
+</div>
+</div>
+
+    
+    
+            <div class='json-tree-section'>
+                <h2>📊 Analysis Data</h2>
+                <div class='tree-container' id='analysis-tree'></div>
+                <button class='expand-all-btn' onclick='expandAllNodes("analysis-tree")'>
+                    🔍 Expand All
+                </button>
+                <button class='collapse-all-btn' onclick='collapseAllNodes("analysis-tree")'>
+                    📁 Collapse All
+                </button>
+            </div>
+            
+            <div class='json-tree-section'>
+                <h2>📋 Processing Metadata</h2>
+                <div class='tree-container' id='metadata-tree'></div>
+                <button class='expand-all-btn' onclick='expandAllNodes("metadata-tree")'>
+                    🔍 Expand All
+                </button>
+                <button class='collapse-all-btn' onclick='collapseAllNodes("metadata-tree")'>
+                    📁 Collapse All
+                </button>
+            </div>
+            
+    
+    <div class="footer">
+        Generated with <a href="https://github.com/anthropics/marcsnarc">marcsnarc</a> - AI-powered MARC cataloging
+    </div>
+    
+    <script>
+        // Global variables for modal and JSON data
+        let currentImages = [];
+        let currentImageIndex = 0;
+        const analysisData = {"collection_analysis": {"item_count": 6, "formats": {"format_counts": {"periodical": 1, "pamphlet": 1, "note|adhesive note": 1, "periodical/magazine": 1, "book": 1, "periodical|magazine": 1}, "unique_formats": "{'periodical/magazine', 'pamphlet', 'note|adhesive note', 'periodical|magazine', 'book', 'periodical'}", "books": 2, "serials": 1, "ephemera": 0, "other": 3, "primary_format": "periodical"}, "creators": {"creator_counts": {"Shina jihen gahō": 1, "駱賓": 1, "Bethany (possibly)": 1, "朝日新聞社": 1, "Tōkyō nichi nichi shimbunsha": 1}, "unique_creators": "{'駱賓', 'Tōkyō nichi nichi shimbunsha', 'Bethany (possibly)', '朝日新聞社', 'Shina jihen gahō'}", "items_with_creators": 5, "items_without_creators": 1, "dominant_creator": ["Shina jihen gahō", 1]}, "dates": {"date_range": [1937, 2006], "earliest_date": 1937, "latest_date": 2006, "date_span": 69, "items_with_dates": 3, "date_counts": {"1937": 2, "2006": 1}}, "languages": {"language_counts": {"jpn": 2, "chi": 1, "eng": 1, "english with japanese romanization": 1, "english|japanese": 1}, "unique_languages": "{'english with japanese romanization', 'chi', 'eng', 'jpn', 'english|japanese'}", "primary_language": "jpn", "multilingual": true}, "subjects": {"subject_counts": {"Sino-Japanese War (1937-1945)": 2, "World War II": 2, "Japanese military photography": 1, "War propaganda": 1, "China-Japan conflict": 1, "War": 1, "Occupied territories": 1, "Military conflict": 1, "Historical documentation": 1, "North China Incident": 1, "Military photography": 1, "War reportage": 1, "Japanese military history": 1, "Japanese puppet theater": 1, "Bunraku": 1, "Osaka": 1, "Japanese performing arts": 1, "Theater history": 1, "Cultural studies": 1, "Japan": 1, "East Asia": 1, "Greater East Asia": 1, "War news": 1, "Illustrated magazines": 1}, "unique_subjects": "{'China-Japan conflict', 'Occupied territories', 'Illustrated magazines', 'Sino-Japanese War (1937-1945)', 'War news', 'Greater East Asia', 'War propaganda', 'Japanese military photography', 'Japan', 'Cultural studies', 'War reportage', 'Bunraku', 'Osaka', 'Historical documentation', 'Japanese puppet theater', 'North China Incident', 'War', 'Military photography', 'East Asia', 'Theater history', 'Japanese performing arts', 'Military conflict', 'World War II', 'Japanese military history'}", "items_with_subjects": 5, "common_subjects": [["Sino-Japanese War (1937-1945)", 2], ["World War II", 2], ["Japanese military photography", 1], ["War propaganda", 1], ["China-Japan conflict", 1]], "subject_coherence": 2.208333333333333}, "provenance": {"collection_provenance": "Extracted from 6 images using marcsnarc", "item_provenances": {}, "consistency_score": 1.0, "has_provenance": true}, "identifiers": {"items_with_isbn": 0, "items_with_issn": 0, "items_with_oclc": 0, "items_with_lccn": 0, "identifier_coverage": 0.0}, "physical_characteristics": {"extent_variety": 4, "dimension_variety": 4, "physical_coherence": 0.33333333333333337}, "format_diversity": 6, "creator_diversity": 5, "has_books_serials": true, "shared_provenance": true, "temporal_coherence": 0.2, "workflow_type": "collection_images_to_marc", "collection_name": "JP-final-test", "processing_timestamp": "2025-12-23T11:51:51.898354", "total_records": 1, "approach": "collection"}, "batch_analysis": {"collection_name": "JP-final-test", "total_images": 6, "successful_analyses": 6, "failed_analyses": 0, "individual_results": [{"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165807773.jpg", "extracted_data": {"title": "The China Incident Pictorial", "creator": {"name": "Shina jihen gahō", "type": "corporate", "source": "claude_analysis", "romanization": "Shina jihen gahō"}, "publication_place": "Tokyo, Osaka, Japan", "publication_date": "1937-1939", "normalized_date": {"normalized": "1937", "end_date": "1939", "circa": false, "uncertain": false, "original": "1937-1939"}, "format": "periodical", "extent": "Multiple issues", "language": "jpn", "original_script_title": "Japanese (mixed with Chinese characters)", "other_identifiers": "Lingwei-0133 via eBay, for ca. $75 per issue", "subjects": [{"heading": "Sino-Japanese War (1937-1945)", "type": "topical", "source": "claude_analysis"}, {"heading": "World War II", "type": "topical", "source": "claude_analysis"}, {"heading": "Japanese military photography", "type": "topical", "source": "claude_analysis"}, {"heading": "War propaganda", "type": "topical", "source": "claude_analysis"}, {"heading": "China-Japan conflict", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "This appears to be a bibliographic reference page listing various issues of a Japanese wartime pictorial magazine about the Second Sino-Japanese War", "source": "image_analysis"}, {"text": "Multiple specific issue numbers are referenced with dates ranging from 1937-1939", "source": "image_analysis"}, {"text": "Issues described include coverage of military operations, soldiers, battles, and war-related content", "source": "image_analysis"}, {"text": "References to covers featuring soldiers in trenches, Japanese officers, Chinese child soldiers, aircraft, artillery, and various military scenes", "source": "image_analysis"}, {"text": "Some issues noted as having special content including periscope features, rooftop photography, and ethnic minority coverage", "source": "image_analysis"}, {"text": "Publisher information indicates Asahi Jiban Gahō (North China version) as alternate title", "source": "image_analysis"}, {"text": "Issues were sold in Shanghai during the occupation period", "source": "image_analysis"}, {"text": "Text indicates these are photo-illustrated magazines devoted to war coverage", "source": "image_analysis"}, {"text": "Multiple issue numbers cataloged: Shōwa 12 August 3, Shōwa 13 August 30, Shōwa 12 October 21, Shōwa 13 February 11, Shōwa 13 February 21, Shōwa 13 March 11, Shōwa 13 September 1, Shōwa 14 March 5, Shōwa 14 April 5, Shōwa 14 April 20, Shōwa 14 May 5", "source": "image_analysis"}, {"text": "Reference to special issue on Manchurian campaign and Tibet war issues", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.765, "creator": 0.675, "publication": 0.39, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.603}, "overall_confidence": 0.603, "claude_factors": {"text_clarity": "high", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "Osaka mei mei nichi nichi, Tokyo nichi nichi", "language": "Japanese (romanized)", "location": "header"}, {"text": "Title: 支那事變畫報 Shina jihen gahō", "language": "Japanese/Chinese", "location": "main entry"}, {"text": "Publisher: 大阪每日新聞社 Osaka mai nichi Shinbun sha", "language": "Japanese/Chinese", "location": "publisher information"}, {"text": "The Shina Jihen Gahō is a large format box photo-illustrated magazine devoted to the war in China", "language": "English", "location": "description"}, {"text": "支那事變畫報 (Hokushi Jihen Gahō) (North China version)", "language": "Japanese/Chinese", "location": "variant title"}], "processing_notes": ["Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 1}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165928834.jpg", "extracted_data": {"title": "淪陷區", "creator": {"name": "駱賓", "type": "personal", "source": "claude_analysis", "romanization": "Luo Bin"}, "format": "pamphlet", "extent": "Single sheet or pamphlet page", "dimensions": "Approximately A4 or similar size", "language": "chi", "original_script_title": "Traditional Chinese characters", "subjects": [{"heading": "War", "type": "topical", "source": "claude_analysis"}, {"heading": "Occupied territories", "type": "topical", "source": "claude_analysis"}, {"heading": "Military conflict", "type": "topical", "source": "claude_analysis"}, {"heading": "Historical documentation", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Document appears to be a historical war-time publication or propaganda material", "source": "image_analysis"}, {"text": "Contains photographic images of ruins and military scenes", "source": "image_analysis"}, {"text": "Text includes phrases related to battlefields and occupied areas", "source": "image_analysis"}, {"text": "Material shows age with visible staining and discoloration", "source": "image_analysis"}, {"text": "Header contains what appears to be publication or serial information", "source": "image_analysis"}, {"text": "Vertical text orientation typical of traditional Chinese publications", "source": "image_analysis"}, {"text": "Images show destroyed buildings and military aircraft", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.45499999999999996, "creator": 0.5249999999999999, "publication": 0.0, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.39449999999999996}, "overall_confidence": 0.39449999999999996, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "淪陷區", "language": "Chinese", "location": "title"}, {"text": "駱賓攝", "language": "Chinese", "location": "attribution/byline"}, {"text": "淪陷區的戰鬥\n淪陷區的慘烈", "language": "Chinese", "location": "subtitle/description area"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 2}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165802824.jpg", "extracted_data": {"creator": {"name": "Bethany (possibly)", "type": "personal", "source": "claude_analysis"}, "format": "note|adhesive note", "extent": "1 adhesive note", "dimensions": "approximately 3x3 inches (standard Post-it note size)", "language": "eng", "original_script_title": "Latin", "notes": [{"text": "This appears to be a blue/turquoise adhesive note (Post-it style) with handwritten text", "source": "image_analysis"}, {"text": "The handwritten text reads 'Bethany' with what appears to be a number '1' or possibly 'T' before it", "source": "image_analysis"}, {"text": "The note is photographed on a wooden surface", "source": "image_analysis"}, {"text": "This is not a traditional bibliographic item but rather an ephemeral note", "source": "image_analysis"}, {"text": "Could be a label, reminder, or identification tag", "source": "image_analysis"}, {"text": "Handwriting appears to be in blue or dark ink", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.45499999999999996, "creator": 0.5249999999999999, "publication": 0.0, "format": 0.26, "language": 0.5850000000000001, "overall": 0.36524999999999996}, "overall_confidence": 0.36524999999999996, "claude_factors": {"text_clarity": "medium", "completeness": "low", "language_certainty": "high"}, "original_text_regions": [{"text": "1 Bethany or T Bethany", "language": "English", "location": "center of adhesive note"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Bibliographic information appears incomplete in image", "Contains CJK characters - romanization provided", "No title could be extracted from image"], "review_required": true, "sequence_number": 3}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165855357.jpg", "extracted_data": {"title": "北支事変画報", "creator": {"name": "朝日新聞社", "type": "corporate", "source": "claude_analysis", "romanization": "Asahi Shinbunsha"}, "publisher": "朝日新聞社", "publication_place": "日本 (Japan)", "publication_date": "昭和十二年 (1937)", "normalized_date": {"normalized": "1937", "end_date": null, "circa": false, "uncertain": false, "original": "昭和十二年 (1937)"}, "format": "periodical/magazine", "extent": "Single issue", "dimensions": "Approximately standard magazine size", "language": "jpn", "original_script_title": "Chinese characters (Kanji)", "other_identifiers": "第一輯 (First volume/issue)", "subjects": [{"heading": "Sino-Japanese War (1937-1945)", "type": "topical", "source": "claude_analysis"}, {"heading": "North China Incident", "type": "topical", "source": "claude_analysis"}, {"heading": "Military photography", "type": "topical", "source": "claude_analysis"}, {"heading": "War reportage", "type": "topical", "source": "claude_analysis"}, {"heading": "Japanese military history", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "Historic Japanese war pictorial magazine", "source": "image_analysis"}, {"text": "Shows soldiers from behind in combat/military position", "source": "image_analysis"}, {"text": "Cover features photograph of Japanese soldiers with helmets and rifles in what appears to be a trench or defensive position", "source": "image_analysis"}, {"text": "Document shows age-related discoloration and wear", "source": "image_analysis"}, {"text": "Title translates to 'North China Incident Pictorial'", "source": "image_analysis"}, {"text": "Published during early period of Second Sino-Japanese War", "source": "image_analysis"}, {"text": "Visible vertical text on left side indicates issue number and publication details", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.765, "creator": 0.675, "publication": 0.5850000000000001, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.642}, "overall_confidence": 0.642, "claude_factors": {"text_clarity": "high", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "北支事変画報", "language": "Japanese", "location": "cover header"}, {"text": "朝日新聞社", "language": "Japanese", "location": "cover - publication information line"}, {"text": "昭和十二年 第一輯", "language": "Japanese", "location": "cover - left side vertical text"}], "processing_notes": ["Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 4}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165816342.jpg", "extracted_data": {"title": "Bibliography or reference work containing entries about Japanese puppet theater and related topics", "publication_date": "2006 (referenced in entries)", "normalized_date": {"normalized": "2006", "end_date": null, "circa": false, "uncertain": false, "original": "2006 (referenced in entries)"}, "format": "book", "dimensions": "Standard letter/A4 size page", "language": "english with japanese romanization", "original_script_title": "Latin script with romanized Japanese", "other_identifiers": "Entry numbers [1930], [1943], [1944] visible", "subjects": [{"heading": "Japanese puppet theater", "type": "topical", "source": "claude_analysis"}, {"heading": "Bunraku", "type": "topical", "source": "claude_analysis"}, {"heading": "Osaka", "type": "topical", "source": "claude_analysis"}, {"heading": "Japanese performing arts", "type": "topical", "source": "claude_analysis"}, {"heading": "Theater history", "type": "topical", "source": "claude_analysis"}, {"heading": "Cultural studies", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "This appears to be a page from a bibliography or reference work", "source": "image_analysis"}, {"text": "Contains multiple bibliographic entries with dates ranging from Showa 14-19 (1939-1944)", "source": "image_analysis"}, {"text": "Entries include Japanese titles romanized in italics followed by English translations", "source": "image_analysis"}, {"text": "References to publications in Osaka, Tokyo, and other locations", "source": "image_analysis"}, {"text": "Multiple entries reference 'Dai ichi ento bunko' (Publishing jointly with the)", "source": "image_analysis"}, {"text": "Entries contain detailed publication information including covers, illustrations, and physical descriptions", "source": "image_analysis"}, {"text": "Some entries reference wartime periods and Guinea as locations", "source": "image_analysis"}, {"text": "Page shows scholarly cataloging of Japanese cultural materials", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.2, "publication": 0.15166666666666667, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.38558333333333333}, "overall_confidence": 0.38558333333333333, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "Showa 14, August 5, no. 64. Anglo-Japanese talks in Tokyo. Cover of Hieronymus, no. of Hieronymus. To celebrate establishment of a new government on Hainan Island.", "language": "English", "location": "upper left entry"}, {"text": "Dai ichi ento bunko 大一演藝文庫 (Osaka: Dai ichi ento sha 大一演藝社", "language": "English with Japanese", "location": "multiple entries"}, {"text": "Greater East Asia War Pictorial: A continuation of the Shina jihengo 支那事變後", "language": "English with Japanese romanization", "location": "middle entries"}, {"text": "[1930], [1943], [1944]", "language": "English/Numbers", "location": "entry reference numbers"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided", "No creator/author information found"], "review_required": true, "sequence_number": 5}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165825246.jpg", "extracted_data": {"title": "Tōkyō nichi nichi shimbunsha sha'in shi'i shinbunshi", "subtitle": "A large format monthly illustrated magazine devoted to the news of Japan's war in greater East Asia", "creator": {"name": "Tōkyō nichi nichi shimbunsha", "type": "corporate", "source": "claude_analysis", "romanization": "Tōkyō nichi nichi shimbunsha"}, "publication_place": "Utagawa-123, via Ebay", "publication_date": "2000s", "normalized_date": {"normalized": null, "end_date": null, "circa": false, "uncertain": true, "original": "2000s"}, "format": "periodical|magazine", "language": "english|japanese", "original_script_title": "Latin script and Japanese characters", "other_identifiers": "Total issues held: 19. Catalogued July, 2019.", "subjects": [{"heading": "Japan", "type": "topical", "source": "claude_analysis"}, {"heading": "World War II", "type": "topical", "source": "claude_analysis"}, {"heading": "East Asia", "type": "topical", "source": "claude_analysis"}, {"heading": "Greater East Asia", "type": "topical", "source": "claude_analysis"}, {"heading": "War news", "type": "topical", "source": "claude_analysis"}, {"heading": "Illustrated magazines", "type": "topical", "source": "claude_analysis"}], "notes": [{"text": "This appears to be a cataloging or description page for a Japanese war-time illustrated magazine publication", "source": "image_analysis"}, {"text": "The text mentions it includes advertisements and contents from cover: Admiral Soemu Toyoda", "source": "image_analysis"}, {"text": "Reference to Combined Fleet standing on the bridge, India Burma front, Seamens in Indochina fleet, Laying Condition", "source": "image_analysis"}, {"text": "Reference to Death of Admiral Mineichi Koga, commander of the combined fleet", "source": "image_analysis"}, {"text": "Reference to Boaganvile and small holes purchased along edge from Utagawa-123 via Ebay", "source": "image_analysis"}, {"text": "Cataloging note indicates 'Disbound, with four small holes punctual along edge'", "source": "image_analysis"}, {"text": "Text appears to be a library or archival catalog entry", "source": "image_analysis"}, {"text": "Publication year noted as 'early 2000s' likely refers to when this cataloging was done or item was acquired", "source": "image_analysis"}], "extraction_source": "claude_vision", "title_source": "claude_analysis", "creator_source": "claude_analysis", "publication_source": "claude_analysis"}, "confidence_scores": {"title": 0.595, "creator": 0.5249999999999999, "publication": 0.30333333333333334, "format": 0.45499999999999996, "language": 0.5850000000000001, "overall": 0.49716666666666665}, "overall_confidence": 0.49716666666666665, "claude_factors": {"text_clarity": "medium", "completeness": "medium", "language_certainty": "high"}, "original_text_regions": [{"text": "Tōkyō nichi nichi shimbunsha sha'in shi'i shinbunshi. A large format monthly illustrated magazine devoted to the news of Japan's war in greater East Asia. Includes a day by day summary of the month's news. Photograps are b&w only. Rear covers are advertisements. Contents: front cover: Admiral Soemu Toyoda, commander of the Combined Fleet, standing on the bridge, India Burma front, Seamens in Indochina fleet, Laying Condition. Boaganvile, Death of Admiral Mineichi Koga, commander of the combined fleet. Disbound, with four small holes punctual along edge, purchased from Utagawa-123, via Ebay in the early 2000s. +++++ Total issues held: 19. Catalogued July, 2019.", "language": "English with romanized Japanese", "location": "catalog description page"}], "processing_notes": ["Overall confidence is low - manual review recommended", "Title extraction has low confidence", "Creator/author extraction has low confidence", "Contains CJK characters - romanization provided"], "review_required": true, "sequence_number": 6}], "collection_analysis": {"total_items": 6, "successful_extractions": 6, "common_characteristics": {"primary_language": "jpn", "language_distribution": {"jpn": 2, "chi": 1, "eng": 1, "english with japanese romanization": 1, "english|japanese": 1}, "primary_format": "periodical", "format_distribution": {"periodical": 1, "pamphlet": 1, "note|adhesive note": 1, "periodical/magazine": 1, "book": 1, "periodical|magazine": 1}, "publishers": {"朝日新聞社": 1}}, "quality_assessment": {"average_confidence": 0.48124999999999996, "high_confidence_items": 0, "low_confidence_items": 4, "confidence_range": [0.36524999999999996, 0.642]}, "recommendations": ["More than 30% of items have low confidence - consider manual review", "Multiple languages detected - verify language coding", "6 items contain CJK characters - verify romanization"]}, "batch_confidence": 0.48124999999999996, "processing_timestamp": "2025-12-23T11:51:51.691164"}, "individual_extractions": [{"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165807773.jpg", "extraction_confidence": 0.603, "extracted_fields": ["title", "creator", "publication_place", "publication_date", "normalized_date", "format", "extent", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165928834.jpg", "extraction_confidence": 0.39449999999999996, "extracted_fields": ["title", "creator", "format", "extent", "dimensions", "language", "original_script_title", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165802824.jpg", "extraction_confidence": 0.36524999999999996, "extracted_fields": ["creator", "format", "extent", "dimensions", "language", "original_script_title", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165855357.jpg", "extraction_confidence": 0.642, "extracted_fields": ["title", "creator", "publisher", "publication_place", "publication_date", "normalized_date", "format", "extent", "dimensions", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165816342.jpg", "extraction_confidence": 0.38558333333333333, "extracted_fields": ["title", "publication_date", "normalized_date", "format", "dimensions", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}, {"image_path": "examples/Japanese Prints in OCLC/PXL_20251212_165825246.jpg", "extraction_confidence": 0.49716666666666665, "extracted_fields": ["title", "subtitle", "creator", "publication_place", "publication_date", "normalized_date", "format", "language", "original_script_title", "other_identifiers", "subjects", "notes", "extraction_source", "title_source", "creator_source", "publication_source", "source_image", "extraction_confidence", "sequence_number"]}], "external_api_results": [{"worldcat": [], "loc": [], "alma": [], "best_match": null}]};
+        const metadataData = {"workflow_type": "collection_images_to_marc", "collection_name": "JP-final-test", "processing_result": {"approach": "collection", "records_generated": 1, "review_required": true, "groupings": {"approach": "collection", "total_items": 6, "groups": [{"type": "collection", "items": ["The China Incident Pictorial", "淪陷區", "Untitled", "北支事変画報", "Bibliography or reference work containing entries about Japanese puppet theater and related topics", "Tōkyō nichi nichi shimbunsha sha'in shi'i shinbunshi"], "record_type": "collection"}]}}, "collection_data": {"total_items": 6, "source_images": ["examples/Japanese Prints in OCLC/PXL_20251212_165807773.jpg", "examples/Japanese Prints in OCLC/PXL_20251212_165928834.jpg", "examples/Japanese Prints in OCLC/PXL_20251212_165802824.jpg", "examples/Japanese Prints in OCLC/PXL_20251212_165855357.jpg", "examples/Japanese Prints in OCLC/PXL_20251212_165816342.jpg", "examples/Japanese Prints in OCLC/PXL_20251212_165825246.jpg"], "provenance": "Extracted from 6 images using marcsnarc"}, "batch_analysis_summary": {"total_images": 6, "successful_analyses": 6, "batch_confidence": 0.48124999999999996}, "processing_timestamp": "2025-12-23T11:51:51.898384"};
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize images array from gallery
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            currentImages = Array.from(thumbnails).map(img => ({
+                src: img.src,
+                alt: img.alt
+            }));
+            
+            // Initialize JSON trees
+            if (analysisData && Object.keys(analysisData).length > 0) {
+                renderJsonTree('analysis-tree', analysisData);
+            }
+            if (metadataData && Object.keys(metadataData).length > 0) {
+                renderJsonTree('metadata-tree', metadataData);
+            }
+        });
+        
+        // Modal functions
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const counter = document.getElementById('modalCounter');
+            
+            if (currentImages[index]) {
+                modalImage.src = currentImages[index].src;
+                modalImage.alt = currentImages[index].alt;
+                counter.textContent = `${index + 1} of ${currentImages.length}`;
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function changeImage(direction) {
+            currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
+            openModal(currentImageIndex);
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                if (e.key === 'Escape') closeModal();
+                if (e.key === 'ArrowLeft') changeImage(-1);
+                if (e.key === 'ArrowRight') changeImage(1);
+            }
+        });
+        
+        // Close modal on background click
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        // JSON Tree rendering functions
+        function renderJsonTree(containerId, data) {
+            const container = document.getElementById(containerId);
+            if (!container || !data) return;
+            
+            container.innerHTML = '';
+            const tree = createTreeElement(data, '', 0);
+            container.appendChild(tree);
+        }
+        
+        function createTreeElement(value, key, level) {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginLeft = `${level * 20}px`;
+            wrapper.style.marginBottom = '3px';
+            
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                // Object
+                const keyElement = document.createElement('div');
+                keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📁 ${key} {${Object.keys(value).length}}</span>`;
+                keyElement.style.userSelect = 'none';
+                
+                const children = document.createElement('div');
+                children.style.display = 'none';
+                children.style.borderLeft = '2px solid #e2e8f0';
+                children.style.marginLeft = '15px';
+                children.style.paddingLeft = '10px';
+                
+                Object.entries(value).forEach(([childKey, childValue]) => {
+                    children.appendChild(createTreeElement(childValue, childKey, 0));
+                });
+                
+                keyElement.addEventListener('click', function() {
+                    const isExpanded = children.style.display !== 'none';
+                    if (isExpanded) {
+                        children.style.display = 'none';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📁 ${key} {${Object.keys(value).length}}</span>`;
+                    } else {
+                        children.style.display = 'block';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▼ 📂 ${key} {${Object.keys(value).length}}</span>`;
+                    }
+                });
+                
+                wrapper.appendChild(keyElement);
+                wrapper.appendChild(children);
+            } else if (Array.isArray(value)) {
+                // Array
+                const keyElement = document.createElement('div');
+                keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📚 ${key} [${value.length}]</span>`;
+                keyElement.style.userSelect = 'none';
+                
+                const children = document.createElement('div');
+                children.style.display = 'none';
+                children.style.borderLeft = '2px solid #e2e8f0';
+                children.style.marginLeft = '15px';
+                children.style.paddingLeft = '10px';
+                
+                value.forEach((item, index) => {
+                    children.appendChild(createTreeElement(item, `[${index}]`, 0));
+                });
+                
+                keyElement.addEventListener('click', function() {
+                    const isExpanded = children.style.display !== 'none';
+                    if (isExpanded) {
+                        children.style.display = 'none';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▶ 📚 ${key} [${value.length}]</span>`;
+                    } else {
+                        children.style.display = 'block';
+                        keyElement.innerHTML = `<span style="cursor: pointer; color: #2d3748; font-weight: 600;">▼ 📖 ${key} [${value.length}]</span>`;
+                    }
+                });
+                
+                wrapper.appendChild(keyElement);
+                wrapper.appendChild(children);
+            } else {
+                // Primitive value
+                const element = document.createElement('div');
+                const valueStr = value === null ? 'null' : String(value);
+                const valueType = typeof value;
+                let color = '#4a5568';
+                let icon = '📄';
+                
+                if (valueType === 'string') { color = '#38a169'; icon = '📝'; }
+                else if (valueType === 'number') { color = '#d69e2e'; icon = '🔢'; }
+                else if (valueType === 'boolean') { color = '#9f7aea'; icon = '✅'; }
+                else if (value === null) { color = '#a0aec0'; icon = '❌'; }
+                
+                element.innerHTML = `<span style="color: #2d3748; font-weight: 600;">${icon} ${key}:</span> <span style="color: ${color};">${valueType === 'string' ? '"' + valueStr + '"' : valueStr}</span>`;
+                wrapper.appendChild(element);
+            }
+            
+            return wrapper;
+        }
+        
+        function expandAllNodes(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Find all clickable tree nodes (divs containing spans with cursor: pointer)
+            container.querySelectorAll('span[style*="cursor: pointer"]').forEach(span => {
+                if (span.innerHTML.includes('▶')) {
+                    span.parentElement.click();
+                }
+            });
+        }
+        
+        function collapseAllNodes(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Find all clickable tree nodes (divs containing spans with cursor: pointer)
+            container.querySelectorAll('span[style*="cursor: pointer"]').forEach(span => {
+                if (span.innerHTML.includes('▼')) {
+                    span.parentElement.click();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
