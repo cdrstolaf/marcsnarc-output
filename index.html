@@ -28,62 +28,95 @@
         .header p { margin: 0; opacity: 0.9; font-size: 1.2em; }
         
         .content { padding: 40px; }
-        .collections-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
-            gap: 25px; margin-top: 30px; 
-        }
         
-        .collection-card { 
-            background: #f8f9ff; border: 2px solid #e2e8f0; 
-            border-radius: 12px; padding: 25px; 
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+        /* Sort Controls */
+        .sort-controls {
+            display: flex; gap: 15px; margin-bottom: 30px;
+            justify-content: center; flex-wrap: wrap;
         }
-        .collection-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 4px;
+        .sort-btn {
+            background: white; border: 2px solid #e2e8f0; 
+            color: #4a5568; padding: 10px 20px; 
+            border-radius: 25px; font-weight: 500; 
+            cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .sort-btn:hover {
+            border-color: #667eea; color: #667eea; 
+            transform: translateY(-1px);
+        }
+        .sort-btn.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-color: transparent;
         }
-        .collection-card:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
-            border-color: #667eea;
+        .sort-arrow {
+            font-size: 12px; opacity: 0.7;
         }
         
-        .collection-title { 
-            margin: 0 0 15px; color: #2d3748; 
-            font-size: 1.4em; font-weight: 600; 
+        /* Collections List */
+        .collections-list {
+            display: flex; flex-direction: column; gap: 1px;
         }
-        .collection-meta { 
-            color: #718096; font-size: 0.9em; 
-            margin-bottom: 20px; 
+        .collection-row {
+            background: white; border: 1px solid #e2e8f0;
+            display: flex; align-items: center; padding: 20px;
+            transition: all 0.3s ease; position: relative;
         }
-        .collection-meta .confidence {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: 500;
+        .collection-row:first-child { border-radius: 10px 10px 0 0; }
+        .collection-row:last-child { border-radius: 0 0 10px 10px; }
+        .collection-row:only-child { border-radius: 10px; }
+        .collection-row:nth-child(even) { background: #f8f9ff; }
+        .collection-row:hover {
+            background: #eef2ff; border-color: #667eea;
+            transform: translateX(5px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Row Layout */
+        .collection-name {
+            flex: 2; min-width: 200px;
+        }
+        .collection-name h3 {
+            margin: 0; color: #2d3748; font-size: 1.2em; font-weight: 600;
+        }
+        .collection-name .subtitle {
+            color: #718096; font-size: 0.9em; margin-top: 3px;
+        }
+        
+        .collection-date {
+            flex: 1.5; min-width: 150px; color: #4a5568;
+        }
+        .date-display { font-size: 0.95em; }
+        .date-time { font-size: 0.8em; color: #718096; }
+        
+        .collection-confidence {
+            flex: 1; min-width: 120px; display: flex; align-items: center;
+        }
+        .confidence {
+            padding: 4px 12px; border-radius: 15px; 
+            font-size: 0.85em; font-weight: 500;
         }
         .confidence.high { background: #d4edda; color: #155724; }
         .confidence.medium { background: #fff3cd; color: #856404; }
         .confidence.low { background: #f8d7da; color: #721c24; }
         
-        .collection-link { 
-            display: inline-block; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; text-decoration: none; 
-            padding: 12px 24px; border-radius: 25px; 
-            font-weight: 500; transition: transform 0.2s ease;
+        .collection-action {
+            flex: 0 0 auto; margin-left: 15px;
         }
-        .collection-link:hover { 
-            transform: scale(1.05); 
-            text-decoration: none; 
+        .collection-link {
+            display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; text-decoration: none; padding: 10px 20px; 
+            border-radius: 20px; font-weight: 500; transition: transform 0.2s ease;
         }
+        .collection-link:hover {
+            transform: scale(1.05); text-decoration: none;
+        }
+        
+        /* Review Status */
+        .review-status {
+            margin-left: 10px; font-size: 0.9em;
+        }
+        .review-required { color: #d69e2e; }
+        .review-approved { color: #38a169; }
         
         .stats { 
             background: #edf2f7; padding: 20px; 
@@ -118,13 +151,29 @@
             margin-bottom: 20px; text-align: center;
         }
         
+        /* Responsive Design */
         @media (max-width: 768px) {
             body { padding: 10px; }
             .header { padding: 30px 20px; }
             .header h1 { font-size: 2em; }
             .content { padding: 30px 20px; }
-            .collections-grid { grid-template-columns: 1fr; }
             .stat-item { margin: 10px; }
+            
+            .collection-row {
+                flex-direction: column; align-items: flex-start; gap: 10px;
+                padding: 15px;
+            }
+            .collection-name, .collection-date, .collection-confidence, .collection-action {
+                flex: none; width: 100%;
+            }
+            .sort-controls { gap: 10px; }
+            .sort-btn { padding: 8px 16px; font-size: 0.9em; }
+        }
+        
+        @media (max-width: 480px) {
+            .collection-confidence {
+                display: flex; justify-content: space-between; align-items: center;
+            }
         }
     </style>
 </head>
@@ -137,27 +186,41 @@
         
         <div class="content">
             <div class="last-updated">
-                Last updated: 2025-12-23 at 13:47:40
+                Last updated: 2025-12-23 at 14:59:02
             </div>
             
             <div class="stats">
                 <h2>Collection Statistics</h2>
                 <div class="stat-item">
-                    <span class="stat-number">20</span>
+                    <span class="stat-number">22</span>
                     <span class="stat-label">Collections</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">20</span>
+                    <span class="stat-number">22</span>
                     <span class="stat-label">MARC Records</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">107</span>
+                    <span class="stat-number">119</span>
                     <span class="stat-label">Images Processed</span>
                 </div>
             </div>
             
+            <!-- Sort Controls -->
+            <div class="sort-controls">
+                <button class="sort-btn" onclick="sortCollections('name')" id="sort-name">
+                    Name <span class="sort-arrow" id="name-arrow">↕️</span>
+                </button>
+                <button class="sort-btn active" onclick="sortCollections('date')" id="sort-date">
+                    Generated Date <span class="sort-arrow" id="date-arrow">↓</span>
+                </button>
+                <button class="sort-btn" onclick="sortCollections('confidence')" id="sort-confidence">
+                    Confidence <span class="sort-arrow" id="confidence-arrow">↕️</span>
+                </button>
+            </div>
+            
+            <!-- Collections List -->
             <div id="collections-container">
-                <div class="collections-grid" id="collections-grid">
+                <div class="collections-list" id="collections-list">
                     <!-- Collections will be loaded here by JavaScript -->
                 </div>
             </div>
@@ -173,6 +236,26 @@
     <script>
         // Collection data from Python
         const collections = [
+        {
+                "name": "JP-WORLDCAT-API-2.0",
+                "display_name": "JP-WORLDCAT-API-2.0",
+                "timestamp": "2025-12-23T14:45:10.060108",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.5079166666666667,
+                "review_required": true,
+                "html_file": "JP-WORLDCAT-API-2.0.html"
+        },
+        {
+                "name": "JP-API-FIX-TEST",
+                "display_name": "JP-API-FIX-TEST",
+                "timestamp": "2025-12-23T14:08:23.299431",
+                "total_images": 6,
+                "records_generated": 1,
+                "confidence_score": 0.43026388888888883,
+                "review_required": true,
+                "html_file": "JP-API-FIX-TEST.html"
+        },
         {
                 "name": "witwii-test",
                 "display_name": "witwii Test",
@@ -375,59 +458,143 @@
         }
 ];
         
+        // Sorting state
+        let currentSort = 'date';
+        let sortDirection = 'desc'; // desc = newest first for dates, desc = Z-A for names, desc = highest first for confidence
+        
         function loadCollections() {
-            const grid = document.getElementById('collections-grid');
+            renderCollections();
+        }
+        
+        function renderCollections() {
+            const list = document.getElementById('collections-list');
+            list.innerHTML = '';
             
             collections.forEach(collection => {
-                const card = createCollectionCard(collection);
-                grid.appendChild(card);
+                const row = createCollectionRow(collection);
+                list.appendChild(row);
             });
         }
         
-        function createCollectionCard(collection) {
-            const card = document.createElement('div');
-            card.className = 'collection-card';
+        function createCollectionRow(collection) {
+            const row = document.createElement('div');
+            row.className = 'collection-row';
             
             // Format timestamp for display
             let displayDate = 'Unknown Date';
+            let displayTime = '';
             if (collection.timestamp) {
                 try {
                     const date = new Date(collection.timestamp);
-                    displayDate = date.toLocaleDateString() + ' at ' + date.toLocaleTimeString();
+                    displayDate = date.toLocaleDateString();
+                    displayTime = date.toLocaleTimeString();
                 } catch (e) {
                     // Keep default if parsing fails
                 }
             }
             
-            // Confidence class
+            // Confidence class and percentage
             let confidenceClass = 'low';
             if (collection.confidence_score > 0.75) confidenceClass = 'high';
             else if (collection.confidence_score > 0.5) confidenceClass = 'medium';
+            const confidencePercent = (collection.confidence_score * 100).toFixed(1);
             
             // Review status
             const reviewStatus = collection.review_required ? 
-                '⚠️ Review Required' : '✅ Approved';
+                '<span class="review-status review-required">⚠️ Review Required</span>' : 
+                '<span class="review-status review-approved">✅ Approved</span>';
             
-            card.innerHTML = `
-                <h3 class="collection-title">${collection.display_name}</h3>
-                <div class="collection-meta">
-                    📅 Generated: ${displayDate}<br>
-                    🖼️ Images: ${collection.total_images} | 📋 Records: ${collection.records_generated}<br>
-                    <span class="confidence ${confidenceClass}">
-                        Confidence: ${(collection.confidence_score * 100).toFixed(1)}%
-                    </span><br>
-                    ${reviewStatus}
+            row.innerHTML = `
+                <div class="collection-name">
+                    <h3>${collection.display_name}</h3>
+                    <div class="subtitle">
+                        🖼️ ${collection.total_images} images • 📋 ${collection.records_generated} records
+                        ${reviewStatus}
+                    </div>
                 </div>
-                <a href="${collection.name}/${collection.html_file}" class="collection-link">
-                    View Collection →
-                </a>
+                <div class="collection-date">
+                    <div class="date-display">${displayDate}</div>
+                    <div class="date-time">${displayTime}</div>
+                </div>
+                <div class="collection-confidence">
+                    <span class="confidence ${confidenceClass}">
+                        ${confidencePercent}%
+                    </span>
+                </div>
+                <div class="collection-action">
+                    <a href="${collection.name}/${collection.html_file}" class="collection-link">
+                        View →
+                    </a>
+                </div>
             `;
             
-            return card;
+            return row;
         }
         
-        // Load collections when page loads
-        document.addEventListener('DOMContentLoaded', loadCollections);
+        function sortCollections(sortBy) {
+            // Update active button
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`sort-${sortBy}`).classList.add('active');
+            
+            // Toggle direction if clicking the same column
+            if (currentSort === sortBy) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // Default directions for each column
+                currentSort = sortBy;
+                if (sortBy === 'date') {
+                    sortDirection = 'desc'; // Newest first
+                } else if (sortBy === 'confidence') {
+                    sortDirection = 'desc'; // Highest first
+                } else {
+                    sortDirection = 'asc'; // A-Z for names
+                }
+            }
+            
+            // Update arrow indicators
+            document.querySelectorAll('.sort-arrow').forEach(arrow => arrow.textContent = '↕️');
+            const currentArrow = document.getElementById(`${sortBy}-arrow`);
+            currentArrow.textContent = sortDirection === 'asc' ? '↑' : '↓';
+            
+            // Sort the collections array
+            collections.sort((a, b) => {
+                let valueA, valueB;
+                
+                switch (sortBy) {
+                    case 'name':
+                        valueA = a.display_name.toLowerCase();
+                        valueB = b.display_name.toLowerCase();
+                        break;
+                    case 'date':
+                        valueA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+                        valueB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+                        break;
+                    case 'confidence':
+                        valueA = a.confidence_score;
+                        valueB = b.confidence_score;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (valueA < valueB) {
+                    return sortDirection === 'asc' ? -1 : 1;
+                } else if (valueA > valueB) {
+                    return sortDirection === 'asc' ? 1 : -1;
+                } else {
+                    return 0;
+                }
+            });
+            
+            // Re-render with smooth transition
+            renderCollections();
+        }
+        
+        // Initialize with default sort (date descending)
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCollections();
+            sortCollections('date'); // Apply default sort
+        });
     </script>
 </body>
 </html>
