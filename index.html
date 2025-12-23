@@ -29,29 +29,38 @@
         
         .content { padding: 40px; }
         
-        /* Sort Controls */
+        /* Sort Controls - Header Row */
         .sort-controls {
-            display: flex; gap: 15px; margin-bottom: 30px;
-            justify-content: center; flex-wrap: wrap;
+            display: flex; align-items: center; 
+            padding: 15px 20px; margin-bottom: 5px;
+            background: #f8f9ff; border: 1px solid #e2e8f0;
+            border-radius: 10px 10px 0 0; 
+            font-weight: 600; color: #4a5568;
         }
         .sort-btn {
-            background: white; border: 2px solid #e2e8f0; 
-            color: #4a5568; padding: 10px 20px; 
-            border-radius: 25px; font-weight: 500; 
+            background: none; border: none; 
+            color: #4a5568; padding: 5px 10px; 
+            font-weight: 600; font-size: 0.9em;
             cursor: pointer; transition: all 0.2s ease;
             display: flex; align-items: center; gap: 5px;
+            border-radius: 4px;
         }
         .sort-btn:hover {
-            border-color: #667eea; color: #667eea; 
-            transform: translateY(-1px);
+            background: rgba(102, 126, 234, 0.1); 
+            color: #667eea;
         }
         .sort-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border-color: transparent;
+            color: #667eea; background: rgba(102, 126, 234, 0.15);
         }
         .sort-arrow {
-            font-size: 12px; opacity: 0.7;
+            font-size: 10px; opacity: 0.6; margin-left: 2px;
         }
+        
+        /* Header column sizing to match data rows */
+        .sort-name { flex: 2; min-width: 200px; }
+        .sort-date { flex: 1.5; min-width: 150px; }
+        .sort-confidence { flex: 1; min-width: 120px; }
+        .sort-action { flex: 0 0 auto; width: 110px; }
         
         /* Collections List */
         .collections-list {
@@ -159,6 +168,15 @@
             .content { padding: 30px 20px; }
             .stat-item { margin: 10px; }
             
+            .sort-controls {
+                flex-direction: column; align-items: flex-start; gap: 10px;
+                padding: 15px;
+            }
+            .sort-name, .sort-date, .sort-confidence, .sort-action {
+                flex: none; width: 100%;
+            }
+            .sort-btn { padding: 8px 12px; font-size: 0.9em; }
+            
             .collection-row {
                 flex-direction: column; align-items: flex-start; gap: 10px;
                 padding: 15px;
@@ -166,8 +184,6 @@
             .collection-name, .collection-date, .collection-confidence, .collection-action {
                 flex: none; width: 100%;
             }
-            .sort-controls { gap: 10px; }
-            .sort-btn { padding: 8px 16px; font-size: 0.9em; }
         }
         
         @media (max-width: 480px) {
@@ -186,7 +202,7 @@
         
         <div class="content">
             <div class="last-updated">
-                Last updated: 2025-12-23 at 15:01:31
+                Last updated: 2025-12-23 at 15:03:30
             </div>
             
             <div class="stats">
@@ -205,17 +221,26 @@
                 </div>
             </div>
             
-            <!-- Sort Controls -->
+            <!-- Sort Controls - Header Row -->
             <div class="sort-controls">
-                <button class="sort-btn" onclick="sortCollections('name')" id="sort-name">
-                    Name <span class="sort-arrow" id="name-arrow">↕️</span>
-                </button>
-                <button class="sort-btn active" onclick="sortCollections('date')" id="sort-date">
-                    Generated Date <span class="sort-arrow" id="date-arrow">↓</span>
-                </button>
-                <button class="sort-btn" onclick="sortCollections('confidence')" id="sort-confidence">
-                    Confidence <span class="sort-arrow" id="confidence-arrow">↕️</span>
-                </button>
+                <div class="sort-name">
+                    <button class="sort-btn" onclick="sortCollections('name')" id="sort-name">
+                        Name <span class="sort-arrow" id="name-arrow">↕️</span>
+                    </button>
+                </div>
+                <div class="sort-date">
+                    <button class="sort-btn active" onclick="sortCollections('date')" id="sort-date">
+                        Generated Date <span class="sort-arrow" id="date-arrow">↓</span>
+                    </button>
+                </div>
+                <div class="sort-confidence">
+                    <button class="sort-btn" onclick="sortCollections('confidence')" id="sort-confidence">
+                        Confidence <span class="sort-arrow" id="confidence-arrow">↕️</span>
+                    </button>
+                </div>
+                <div class="sort-action">
+                    <!-- Empty action column header -->
+                </div>
             </div>
             
             <!-- Collections List -->
